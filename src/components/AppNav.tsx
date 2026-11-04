@@ -4,20 +4,20 @@ import { usePathname } from "next/navigation";
 import { Icon, type IconName } from "@/components/Icon";
 import { Logo } from "@/components/Logo";
 
-// Two sets of sections on one account (30 Oct / 3 Nov): Earn (Tasks, My tasks, Wallet, Settings)
-// and Create (Overview, Post a task, Wallet, Settings). The URL decides which set shows.
+// Two sets of sections on one account (30 Oct / 3 Nov): Earn (Tasks, My tasks, Earnings, Settings)
+// and Create (Overview, Post a task, Creator funds, Settings). The URL decides which set shows.
 // Phones get a bottom tab bar; laptops get a top bar with the same links.
 type L = { href: string; label: string; icon: IconName };
 const EARN: L[] = [
   { href: "/tasks", label: "Tasks", icon: "tasks" },
   { href: "/my-tasks", label: "My tasks", icon: "mytasks" },
-  { href: "/wallet", label: "Wallet", icon: "wallet" },
+  { href: "/wallet", label: "Earnings", icon: "wallet" },
   { href: "/settings", label: "Settings", icon: "settings" },
 ];
 const CREATE: L[] = [
   { href: "/create", label: "Overview", icon: "tasks" },
   { href: "/create/new", label: "Post a task", icon: "plus" },
-  { href: "/create/wallet", label: "Wallet", icon: "wallet" },
+  { href: "/create/wallet", label: "Funds", icon: "wallet" },
   { href: "/create/settings", label: "Settings", icon: "settings" },
 ];
 

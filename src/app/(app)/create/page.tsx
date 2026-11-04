@@ -39,7 +39,7 @@ export default async function CreatorHome() {
       </div>
 
       <section className="c-card c-dark" style={{ display: "flex", flexDirection: "column", gap: 12, padding: 24 }}>
-        <span className="c-small">Available</span>
+        <span className="c-small">Creator funds</span>
         <span style={{ fontSize: 36, fontWeight: 700, letterSpacing: "-0.03em" }}>{naira(balance)}</span>
         <span className="c-small">{naira(locked)} locked in tasks</span>
       </section>

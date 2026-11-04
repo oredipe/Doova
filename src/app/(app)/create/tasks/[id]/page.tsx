@@ -51,7 +51,7 @@ export default async function CreatorTaskPage({ params, searchParams }: {
       {sp.funded && t.status === "under_moderation" && (
         <div className="c-note" role="status"><Icon name="check" size={18} /><span>{naira(t.reward_kobo * t.slots + (t.fee_kobo ?? feeKobo(t.reward_kobo * t.slots)))} is locked. Doova is checking your task now, usually within 4 hours, then it goes live.</span></div>
       )}
-      {sp.closed && <div className="c-note" role="status"><Icon name="check" size={18} /><span>Task closed. Unused rewards come back to your wallet as the last responses are decided.</span></div>}
+      {sp.closed && <div className="c-note" role="status"><Icon name="check" size={18} /><span>Task closed. Unused rewards come back to your Creator funds as the last responses are decided.</span></div>}
       {sp.reviewed && <div className="c-note" role="status"><Icon name="check" size={18} /><span>All caught up. Nothing waiting for you on this task.</span></div>}
       {sp.error && <p className="c-error" role="alert">{sp.error}</p>}
 

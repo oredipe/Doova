@@ -35,7 +35,7 @@ export async function loadOwnTask(id: string, me: Profile): Promise<OwnTask> {
 
 export async function walletBalance(meId: string): Promise<number> {
   const db = createAdminClient();
-  const { data } = await db.from("v_wallet_balances").select("balance_kobo").eq("owner_type", "user").eq("owner_id", meId).maybeSingle();
+  const { data } = await db.from("v_wallet_balances").select("balance_kobo").eq("owner_type", "user").eq("owner_id", meId).eq("purse", "funds").maybeSingle();
   return Number(data?.balance_kobo ?? 0);
 }
 
@@ -53,7 +53,7 @@ export const TASK_STATUS: Record<string, { label: string; pill: string }> = {
 
 export function friendlyCreatorError(message: string | undefined): string {
   const m = (message ?? "").toLowerCase();
-  if (m.includes("insufficient balance")) return "Your wallet doesn't have enough for this task yet. Add money first.";
+  if (m.includes("insufficient balance")) return "Your Creator funds don't have enough for this task yet. Add money first.";
   if (m.includes("slots a task")) return message!.replace(/^.*?:\s*/, "").replace(/^\w/, (c) => c.toUpperCase()) + ". Your tier rises as you complete tasks.";
   if (m.includes("laptop tasks")) return "Laptop tasks open at the Verified tier.";
   if (m.includes("nda tasks")) return "NDA tasks open at the Trusted tier.";

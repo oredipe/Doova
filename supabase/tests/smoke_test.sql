@@ -15,7 +15,7 @@ create or replace function _put(p text, v uuid) returns void language sql as $$
 create or replace function _bal(p uuid) returns bigint language sql as $$
   select coalesce((select balance_kobo from ledger_accounts where id = p), 0) $$;
 create or replace function _wallet(p text) returns bigint language sql as $$
-  select _bal(wallet_account('user', _id(p))) $$;
+  select _bal(wallet_account('user', _id(p))) + _bal(earnings_account(_id(p))) $$;  -- both balances
 -- Run a statement that MUST fail, and check the error mentions the expected words.
 create or replace function _expect_error(p_sql text, p_words text) returns void language plpgsql as $$
 begin

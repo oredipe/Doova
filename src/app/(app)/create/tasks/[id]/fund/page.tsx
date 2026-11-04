@@ -35,22 +35,22 @@ export default async function FundPage({ params, searchParams }: { params: Promi
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderTop: "1px solid var(--c-line)", paddingTop: 10 }}>
           <span style={{ fontWeight: 650 }}>Total</span><span style={{ fontSize: 30, fontWeight: 700 }}>{naira(total)}</span>
         </div>
-        <span className="c-small">In your wallet: {naira(balance)}</span>
+        <span className="c-small">In your Creator funds: {naira(balance)}</span>
       </section>
 
       {error && <p className="c-error" role="alert">{error}</p>}
 
       {short === 0 ? (
         <form action={fundFromWallet.bind(null, id)}>
-          <button className="c-btn c-btn-primary c-btn-block">Pay {naira(total)} from my wallet</button>
+          <button className="c-btn c-btn-primary c-btn-block">Pay {naira(total)} from Creator funds</button>
         </form>
       ) : (
         <section className="c-card" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <h2 className="c-h2">Add {naira(short)} to your wallet</h2>
+          <h2 className="c-h2">Add {naira(short)} to your Creator funds</h2>
           <div className="c-account">
             <span className="c-small">Your Doova account number</span>
             <b>Coming soon</b>
-            <span className="c-small">Once Paystack is connected, you&rsquo;ll get your own account number here. Transfers land in your wallet within minutes, at no extra cost.</span>
+            <span className="c-small">Once Paystack is connected, you&rsquo;ll get your own account number here. Transfers land in your Creator funds within minutes, at no extra cost.</span>
           </div>
           {testMode() && (
             <form action={addTestMoney.bind(null, id)} style={{ display: "flex", flexDirection: "column", gap: 8 }}>

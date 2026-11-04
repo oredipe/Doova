@@ -37,7 +37,7 @@ export default async function DonePage({ params }: { params: Promise<{ id: strin
   if (sub.status === "approved") {
     const [{ data: xpRows }, { data: wallet }, { data: next }] = await Promise.all([
       db.from("xp_events").select("points").eq("user_id", me.id).eq("source_id", sub.id),
-      db.from("v_wallet_balances").select("balance_kobo").eq("owner_type", "user").eq("owner_id", me.id).maybeSingle(),
+      db.from("v_wallet_balances").select("balance_kobo").eq("owner_type", "user").eq("owner_id", me.id).eq("purse", "earnings").maybeSingle(),
       db.from("v_task_feed").select("id, title, reward_kobo, estimated_minutes, creator_name").gt("slots_left", 0).neq("id", id)
         .lte("reward_kobo", [0, 150000, 300000, 500000, 1000000, 1e12][me.level]).order("went_live_at", { ascending: false }).limit(5),
     ]);
@@ -54,7 +54,7 @@ export default async function DonePage({ params }: { params: Promise<{ id: strin
           <span style={{ fontWeight: 650 }}>Paid</span>
           <span className="paid-amount">+{naira(task.reward_kobo)}</span>
           <span style={{ fontSize: 16, lineHeight: 1.5 }}>
-            {sub.auto_approved ? "Your answers passed the checks." : `${creator.name} approved your work.`} The money is in your wallet now.
+            {sub.auto_approved ? "Your answers passed the checks." : `${creator.name} approved your work.`} The money is in your Earnings now.
           </span>
         </section>
 
@@ -69,7 +69,7 @@ export default async function DonePage({ params }: { params: Promise<{ id: strin
 
         <section className="c-card c-dark" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
           <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <span className="c-small">Wallet</span>
+            <span className="c-small">Earnings</span>
             <span style={{ fontSize: 26, fontWeight: 700 }}>{naira(Number(wallet?.balance_kobo ?? 0))}</span>
           </span>
           <Link href="/wallet" className="c-btn c-btn-money" style={{ minHeight: 44 }}>Withdraw</Link>

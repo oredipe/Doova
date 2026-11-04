@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/supabase/server";
@@ -16,7 +17,7 @@ export type Profile = {
 };
 
 /** The signed-in person's Doova profile. Sends them to sign in, or to finish sign-up, if needed. */
-export async function requireProfile(): Promise<Profile> {
+export const requireProfile = cache(async (): Promise<Profile> => {
   const user = await getAuthUser();
   if (!user) redirect("/sign-in");
   const db = createAdminClient();
@@ -28,7 +29,7 @@ export async function requireProfile(): Promise<Profile> {
   if (error) throw new Error("Could not load your profile: " + error.message);
   if (!data || !data.full_name) redirect("/sign-up?step=profile");
   return data as Profile;
-}
+});
 
 export function initialsOf(name: string | null): string {
   if (!name) return "D";

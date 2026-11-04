@@ -27,17 +27,20 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  // Do not put code between createServerClient and getUser: it refreshes the session.
-  const { data } = await supabase.auth.getUser();
+  // Do not put code between createServerClient and getClaims: it refreshes the session.
+  // getClaims verifies the token locally with the public signing key (no Auth server trip).
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims as { sub?: string; user_metadata?: { profile_complete?: boolean } } | undefined;
+  const signedIn = Boolean(claims?.sub);
   const path = request.nextUrl.pathname;
 
-  if (!data.user && APP_PATHS.some((p) => path === p || path.startsWith(p + "/"))) {
+  if (!signedIn && APP_PATHS.some((p) => path === p || path.startsWith(p + "/"))) {
     const to = request.nextUrl.clone();
     to.pathname = "/sign-in";
     to.searchParams.set("next", path);
     return NextResponse.redirect(to);
   }
-  if (data.user && AUTH_PATHS.includes(path) && data.user.user_metadata?.profile_complete) {
+  if (signedIn && AUTH_PATHS.includes(path) && claims?.user_metadata?.profile_complete) {
     const to = request.nextUrl.clone();
     to.pathname = "/tasks";
     to.search = "";

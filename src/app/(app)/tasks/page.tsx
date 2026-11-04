@@ -23,6 +23,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
   const { welcome } = await searchParams;
   const me = await requireProfile();
   const db = createAdminClient();
+  const minePromise = db.from("submissions").select("task_id, status").eq("doer_id", me.id);
   const { data, error } = await db
     .from("v_task_feed")
     .select("id, title, reward_kobo, slots_left, estimated_minutes, kind, needs_laptop, creator_name, ends_at")
@@ -30,7 +31,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
     .order("went_live_at", { ascending: false })
     .limit(50);
   const tasks = (data ?? []) as FeedTask[];
-  const { data: mine } = await db.from("submissions").select("task_id, status").eq("doer_id", me.id);
+  const { data: mine } = await minePromise;
   const myStatus = new Map((mine ?? []).map((m) => [m.task_id as string, m.status as string]));
   const STATUS_PILL: Record<string, [string, string]> = {
     reserved: ["c-pill c-pill-active", "In progress"], submitted: ["c-pill c-pill-quiet", "Waiting for review"],

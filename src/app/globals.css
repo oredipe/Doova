@@ -163,3 +163,7 @@ fieldset[aria-invalid="true"] .c-choice, fieldset[aria-invalid="true"] .c-rate s
 .c-account b { font-size: 26px; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
 .shell-switch { display: none; }
 @media (min-width: 900px) { .shell-switch { display: inline; } }
+
+/* ---------- loading skeleton ---------- */
+@keyframes skel { 0% { opacity: 0.55; } 50% { opacity: 0.9; } 100% { opacity: 0.55; } }
+.skel { border-radius: 16px; background: #ECEBE6; animation: skel 1.2s ease-in-out infinite; }

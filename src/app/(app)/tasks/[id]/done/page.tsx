@@ -1,0 +1,139 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { Icon } from "@/components/Icon";
+import { ScrollToTop } from "@/components/ScrollToTop";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { naira, requireProfile } from "@/lib/profile";
+import { creatorSummary, LEVEL_NAMES, LEVEL_XP, loadTask } from "@/lib/tasks";
+
+export const metadata: Metadata = { title: "Task result" };
+
+function when(iso: string) {
+  return new Intl.DateTimeFormat("en-NG", { weekday: "short", hour: "numeric", minute: "2-digit", timeZone: "Africa/Lagos" }).format(new Date(iso));
+}
+
+export default async function DonePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const me = await requireProfile();
+  const task = await loadTask(id);
+  if (!task) notFound();
+  const db = createAdminClient();
+  const { data: sub } = await db.from("submissions")
+    .select("id, status, submitted_at, reject_reason, auto_approved, appeal_deadline, checks")
+    .eq("task_id", id).eq("doer_id", me.id).maybeSingle();
+  if (!sub) redirect(`/tasks/${id}`);
+  if (sub.status === "reserved") redirect(`/tasks/${id}/do`);
+
+  const creator = await creatorSummary(task);
+  const actions = (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <ScrollToTop />
+      <Link href="/tasks" className="c-btn c-btn-primary c-btn-block">Back to tasks</Link>
+      <Link href="/my-tasks" className="c-btn c-btn-quiet c-btn-block">My tasks</Link>
+    </div>
+  );
+
+  if (sub.status === "approved") {
+    const [{ data: xpRows }, { data: wallet }, { data: next }] = await Promise.all([
+      db.from("xp_events").select("points").eq("user_id", me.id).eq("source_id", sub.id),
+      db.from("v_wallet_balances").select("balance_kobo").eq("owner_type", "user").eq("owner_id", me.id).maybeSingle(),
+      db.from("v_task_feed").select("id, title, reward_kobo, estimated_minutes, creator_name").gt("slots_left", 0).neq("id", id)
+        .lte("reward_kobo", [0, 150000, 300000, 500000, 1000000, 1e12][me.level]).order("went_live_at", { ascending: false }).limit(5),
+    ]);
+    const { data: done } = await db.from("submissions").select("task_id").eq("doer_id", me.id);
+    const tried = new Set((done ?? []).map((d) => d.task_id));
+    const up = (next ?? []).find((t) => !tried.has(t.id));
+    const gained = (xpRows ?? []).reduce((s, r) => s + r.points, 0);
+    const nextLevel = Math.min(me.level + 1, 5);
+    const pct = me.level >= 5 ? 100 : Math.min(100, Math.round(((me.xp - LEVEL_XP[me.level]) / (LEVEL_XP[nextLevel] - LEVEL_XP[me.level])) * 100));
+
+    return (
+      <>
+        <section className="paid-head" aria-live="polite">
+          <span style={{ fontWeight: 650 }}>Paid</span>
+          <span className="paid-amount">+{naira(task.reward_kobo)}</span>
+          <span style={{ fontSize: 16, lineHeight: 1.5 }}>
+            {sub.auto_approved ? "Your answers passed the checks." : `${creator.name} approved your work.`} The money is in your wallet now.
+          </span>
+        </section>
+
+        <section className="c-card" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <strong>Level {me.level} · {LEVEL_NAMES[me.level]}</strong>
+            {gained > 0 && <span className="c-xp"><Icon name="spark" size={12} stroke={2.2} /> +{gained} XP</span>}
+          </div>
+          <div className="c-bar"><span style={{ width: `${pct}%` }} /></div>
+          <span className="c-small">{me.level >= 5 ? "You're at the top level." : `${me.xp} of ${LEVEL_XP[nextLevel]} XP. ${LEVEL_XP[nextLevel] - me.xp} more for Level ${nextLevel}.`}</span>
+        </section>
+
+        <section className="c-card c-dark" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+          <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <span className="c-small">Wallet</span>
+            <span style={{ fontSize: 26, fontWeight: 700 }}>{naira(Number(wallet?.balance_kobo ?? 0))}</span>
+          </span>
+          <Link href="/wallet" className="c-btn c-btn-money" style={{ minHeight: 44 }}>Withdraw</Link>
+        </section>
+
+        {up && (
+          <>
+            <h2 className="c-sec">Up next for you</h2>
+            <Link href={`/tasks/${up.id}`} className="c-card" style={{ display: "flex", gap: 14, alignItems: "center", textDecoration: "none" }}>
+              <span className="c-ico" style={{ background: "var(--c-violet-soft)", color: "var(--c-violet-text)" }}><Icon name="spark" size={18} /></span>
+              <span className="c-row-main">
+                <span className="c-row-title">{up.title}</span>
+                <span className="c-small">{up.creator_name} · about {up.estimated_minutes} min</span>
+              </span>
+              <span className="c-amt">{naira(up.reward_kobo)}</span>
+            </Link>
+          </>
+        )}
+        {actions}
+      </>
+    );
+  }
+
+  if (sub.status === "submitted" || sub.status === "appealed") {
+    const due = new Date(new Date(sub.submitted_at).getTime() + task.auto_approve_hours * 3600_000).toISOString();
+    return (
+      <>
+        <section className="c-card" style={{ display: "flex", flexDirection: "column", gap: 12, padding: 28 }}>
+          <span className="empty-art" style={{ marginBottom: 0 }}><Icon name="clock" size={30} /></span>
+          <h1 className="c-h1">Submitted. Waiting for review.</h1>
+          <p className="c-sub" style={{ color: "var(--c-ink)" }}>
+            {creator.name} checks this work. If they don&rsquo;t decide by <strong>{when(due)}</strong>, it&rsquo;s approved and your {naira(task.reward_kobo)} is paid automatically.
+          </p>
+          <span className="c-pill c-pill-paid" style={{ alignSelf: "flex-start" }}><Icon name="lock" size={12} stroke={2.2} /> {naira(task.reward_kobo)} is locked for you</span>
+        </section>
+        {actions}
+      </>
+    );
+  }
+
+  if (sub.status === "rejected" || sub.status === "rejected_final") {
+    return (
+      <>
+        <section className="c-card" style={{ display: "flex", flexDirection: "column", gap: 12, padding: 28 }}>
+          <h1 className="c-h1">Not approved</h1>
+          <p className="c-sub">The creator gave this reason:</p>
+          <p style={{ margin: 0, background: "var(--c-ground)", borderRadius: 12, padding: "12px 14px", lineHeight: 1.5 }}>&ldquo;{sub.reject_reason}&rdquo;</p>
+          {sub.status === "rejected" && sub.appeal_deadline && (
+            <p className="c-small" style={{ margin: 0 }}>You can appeal until {when(sub.appeal_deadline)}. Appeals arrive in the next update.</p>
+          )}
+        </section>
+        {actions}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <section className="c-card" style={{ display: "flex", flexDirection: "column", gap: 12, padding: 28 }}>
+        <h1 className="c-h1">{sub.status === "expired" ? "Time ran out" : "You left this task"}</h1>
+        <p className="c-sub">The slot went back for someone else. {creator.slotsLeft > 0 ? "There are still slots, so you can start again." : ""}</p>
+      </section>
+      {creator.slotsLeft > 0 && <Link href={`/tasks/${id}`} className="c-btn c-btn-primary c-btn-block">Try again</Link>}
+      {actions}
+    </>
+  );
+}

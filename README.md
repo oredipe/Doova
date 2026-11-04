@@ -18,6 +18,11 @@ that need real answers. Every reward is locked in before a task goes live.
    (for example `2348031234567=123456`). Signing up with that number accepts code `123456`
    and sends no text.
 
+### Updating a database that's already set up
+Each update ships as one file in `supabase/updates/`, to paste into the SQL Editor once, in date order.
+`2026-11-04-step2.sql` adds the automatic checks and three **sample tasks** (from "Doova sample tasks")
+for testing the doer flow. The sample money is pretend; start a fresh database before real launch.
+
 ### 2. Website (Vercel)
 1. **Add New → Project →** import `oredipe/Doova`. Framework: Next.js (detected). No build settings to change.
 2. Before deploying, open **Environment Variables** and add the values from Supabase

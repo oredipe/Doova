@@ -227,5 +227,27 @@ begin
   assert not exists (select 1 from v_ledger_balance_drift), 'ledger drift';
 end $$;
 
+\echo '12. Automatic checks: a pass pays at once; a fail goes to the creator; wallet history lists it'
+do $$
+declare t uuid; s uuid; d uuid;
+begin
+  insert into users (phone, full_name, level) values ('+2349000000009', 'Check Doer', 1) returning id into d;
+  perform record_deposit('paystack', 'DEP-AUTO', 'user', _id('c'), 'bank_transfer', 287500, 0);
+  insert into tasks (creator_type, creator_id, created_by_user_id, title, category, instructions, proof_type,
+                     review_mode, reward_kobo, slots, ends_at, status)
+  values ('user', _id('c'), _id('c'), 'Auto survey', 'native', 'x', 'form', 'auto', 50000, 5, now() + interval '3 days', 'pending_funding')
+  returning id into t;
+  perform fund_task(t, true);
+  update tasks set went_live_at = now() - interval '1 hour' where id = t;
+  s := reserve_slot(t, d);
+  assert submit_submission(s, d, '{"q1":"Sometimes"}', null, true, '{"passed":true,"failed":[]}') = 'approved';
+  assert (select amount_kobo from v_wallet_history where owner_id = d order by created_at desc limit 1) = 50000;
+  insert into users (phone, full_name, level) values ('+2349000000010', 'Fail Doer', 1) returning id into d;
+  s := reserve_slot(t, d);
+  assert submit_submission(s, d, '{"q1":"Always"}', null, false, '{"passed":false,"failed":["attention"]}') = 'submitted',
+         'failed checks wait for the creator';
+  assert (select checks->'failed'->>0 from submissions where id = s) = 'attention';
+end $$;
+
 \echo 'ALL PROGRESSION TESTS PASSED'
 drop schema test_helpers cascade;

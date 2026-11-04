@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { AppNav } from "@/components/AppNav";
+import { Logo } from "@/components/Logo";
 import { SetupNeeded } from "@/components/SetupNeeded";
 import { supabaseConfigured } from "@/lib/env";
 import { initialsOf, requireProfile } from "@/lib/profile";
@@ -8,6 +9,15 @@ import { initialsOf, requireProfile } from "@/lib/profile";
 async function Nav() {
   const me = await requireProfile();
   return <AppNav initials={initialsOf(me.full_name)} />;
+}
+
+// Shown for a moment while the session loads (can't read the URL here: that would block prerendering).
+function NavFallback() {
+  return (
+    <header className="shell-head">
+      <div className="shell-head-in"><Logo href="/tasks" /></div>
+    </header>
+  );
 }
 
 function PageLoading() {
@@ -25,7 +35,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
   return (
     <div className="shell">
-      <Suspense fallback={<AppNav initials="" />}>
+      <Suspense fallback={<NavFallback />}>
         <Nav />
       </Suspense>
       <main className="shell-main">

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { naira, requireProfile } from "@/lib/profile";
@@ -29,6 +30,13 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
     .order("went_live_at", { ascending: false })
     .limit(50);
   const tasks = (data ?? []) as FeedTask[];
+  const { data: mine } = await db.from("submissions").select("task_id, status").eq("doer_id", me.id);
+  const myStatus = new Map((mine ?? []).map((m) => [m.task_id as string, m.status as string]));
+  const STATUS_PILL: Record<string, [string, string]> = {
+    reserved: ["c-pill c-pill-active", "In progress"], submitted: ["c-pill c-pill-quiet", "Waiting for review"],
+    approved: ["c-pill c-pill-lime", "Paid"], appealed: ["c-pill c-pill-quiet", "Appeal open"],
+    rejected: ["c-pill c-pill-bad", "Not approved"], rejected_final: ["c-pill c-pill-bad", "Not approved"],
+  };
   const next = Math.min(me.level + 1, 5);
   const pct = me.level >= 5 ? 100 : Math.min(100, Math.round(((me.xp - LEVEL_XP[me.level]) / (LEVEL_XP[next] - LEVEL_XP[me.level])) * 100));
   const first = me.full_name?.split(" ")[0] ?? "there";
@@ -73,19 +81,25 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
       {tasks.length > 0 && (
         <div className="c-group">
           {tasks.map((t) => (
-            <div key={t.id} className="c-row">
+            <Link key={t.id} href={`/tasks/${t.id}`} className="c-row">
               <div className="c-row-main">
                 <span className="c-small">{t.creator_name}</span>
                 <span className="c-row-title">{t.title}</span>
                 <span className="c-small">
                   About {t.estimated_minutes} min · {t.slots_left} slots left{t.needs_laptop ? " · Laptop" : ""}
                 </span>
-                <span className="c-pill c-pill-paid" style={{ alignSelf: "flex-start", marginTop: 4 }}>
-                  <Icon name="lock" size={12} stroke={2.2} /> Reward locked
-                </span>
+                {STATUS_PILL[myStatus.get(t.id) ?? ""] ? (
+                  <span className={STATUS_PILL[myStatus.get(t.id)!][0]} style={{ alignSelf: "flex-start", marginTop: 4 }}>
+                    {STATUS_PILL[myStatus.get(t.id)!][1]}
+                  </span>
+                ) : (
+                  <span className="c-pill c-pill-paid" style={{ alignSelf: "flex-start", marginTop: 4 }}>
+                    <Icon name="lock" size={12} stroke={2.2} /> Reward locked
+                  </span>
+                )}
               </div>
               <span className="c-amt">{naira(t.reward_kobo)}</span>
-            </div>
+            </Link>
           ))}
         </div>
       )}

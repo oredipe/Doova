@@ -38,9 +38,25 @@ for testing the doer flow. The sample money is pretend; start a fresh database b
 4. In Supabase **Authentication → URL Configuration**, set **Site URL** to your `*.vercel.app` address.
 
 ### Test mode (pilot only)
-Add `DOOVA_TEST_MODE` = `on` in Vercel's environment variables to try the creator side before Paystack and
-the admin dashboard exist: creators get an "Add test money" button when funding and can approve their own
-task. The money is pretend. Remove the variable (and start a fresh database) before real launch.
+Add `DOOVA_TEST_MODE` = `on` in Vercel's environment variables to try the creator side before Paystack
+exists: creators get an "Add test money" button when funding. The money is pretend. Tasks are approved in
+the admin dashboard. Remove the variable (and start a fresh database) before real launch.
+
+### Admin dashboard (`/admin`)
+Staff (Owner, Moderator, Finance, Support) approve tasks, decide appeals, watch payouts, run the daily
+money check, look up and suspend accounts, and (owners) flip switches and manage the team. Every action
+is logged by name.
+
+1. Sign up in the app with your phone like anyone else.
+2. Make yourself the first owner once, in the SQL Editor:
+   `select add_staff_member(null, '+2348012345678', 'owner', 'you@example.com');`
+3. While signed in to the app, open `/admin`. It links your email and asks you to scan a QR code with an
+   authenticator app (Google Authenticator, Microsoft Authenticator…). After that, sign in at
+   `/admin/sign-in` with email, password and the 6-digit code.
+
+Supabase needs **Authentication → Sign In / Providers → Email** enabled (for the email sign-in) and
+**Multi-Factor → TOTP** enabled (on by default). Add more staff from Settings in the dashboard; they sign
+up in the app first.
 
 ### 3. Text messages (later)
 When the Termii account is ready: Supabase **Authentication → Hooks → Send SMS hook → HTTPS**,
@@ -79,8 +95,8 @@ TEST_DATABASE_URL=postgres://localhost/doova_test ./supabase/tests/run_all.sh
 ```
 
 It runs the money and workflow scenarios (`smoke_test.sql`), creator tiers, doer levels, XP,
-streaks, badges, staff and laptop sign-in (`progression_test.sql`), and a 40-people-for-10-slots
-race test.
+streaks, badges, staff and laptop sign-in (`progression_test.sql`), the admin dashboard's staff
+functions (`admin_test.sql`), and a 40-people-for-10-slots race test.
 
 ## Decisions built in (November 2026)
 - 15% platform fee on top of rewards; ₦100 per withdrawal; ₦1,500 minimum; no maximum or daily limit.

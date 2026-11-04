@@ -19,7 +19,7 @@ export type OwnTask = {
   id: string; title: string; instructions: string; kind: string; status: string; review_mode: "auto" | "manual";
   reward_kobo: number; slots: number; fee_kobo: number | null; estimated_minutes: number; attempt_minutes: number;
   auto_approve_hours: number; ends_at: string; created_at: string; funded_at: string | null; went_live_at: string | null;
-  form_schema: FormSchema | null;
+  form_schema: FormSchema | null; moderation_note: string | null; moderated_at: string | null;
 };
 
 /** A task this person created. Anyone else gets a 404 (no hint that it exists). */
@@ -27,7 +27,7 @@ export async function loadOwnTask(id: string, me: Profile): Promise<OwnTask> {
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const db = createAdminClient();
   const { data } = await db.from("tasks")
-    .select("id, title, instructions, kind, status, review_mode, reward_kobo, slots, fee_kobo, estimated_minutes, attempt_minutes, auto_approve_hours, ends_at, created_at, funded_at, went_live_at, form_schema, creator_type, creator_id")
+    .select("id, title, instructions, kind, status, review_mode, reward_kobo, slots, fee_kobo, estimated_minutes, attempt_minutes, auto_approve_hours, ends_at, created_at, funded_at, went_live_at, form_schema, moderation_note, moderated_at, creator_type, creator_id")
     .eq("id", id).maybeSingle();
   if (!data || data.creator_type !== "user" || data.creator_id !== me.id) notFound();
   return data as OwnTask;

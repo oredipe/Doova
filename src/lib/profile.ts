@@ -14,6 +14,7 @@ export type Profile = {
   streak_days: number;
   creator_tier: number;
   app_mode: "earn" | "create";
+  status: "active" | "suspended" | "deleted";
 };
 
 /** The signed-in person's Doova profile. Sends them to sign in, or to finish sign-up, if needed. */
@@ -23,11 +24,12 @@ export const requireProfile = cache(async (): Promise<Profile> => {
   const db = createAdminClient();
   const { data, error } = await db
     .from("users")
-    .select("id, phone, full_name, kyc_tier, level, xp, streak_days, creator_tier, app_mode")
+    .select("id, phone, full_name, kyc_tier, level, xp, streak_days, creator_tier, app_mode, status")
     .eq("id", user.id)
     .maybeSingle();
   if (error) throw new Error("Could not load your profile: " + error.message);
   if (!data || !data.full_name) redirect("/sign-up?step=profile");
+  if (data.status !== "active") redirect("/paused");
   return data as Profile;
 });
 

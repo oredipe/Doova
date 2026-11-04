@@ -57,3 +57,19 @@ export async function leaveTask(taskId: string) {
   await db.rpc("withdraw_reservation", { p_task: taskId, p_doer: me.id });
   redirect(`/tasks/${taskId}`);
 }
+
+/** Appeal a rejection once, within the appeal window. Doova staff decide within 24 hours. */
+export async function appealRejection(taskId: string, form: FormData) {
+  const me = await requireProfile();
+  const reason = String(form.get("reason") ?? "").trim().slice(0, 1000);
+  if (reason.length < 20) redirect(`/tasks/${taskId}/done?error=${encodeURIComponent("Explain in a sentence or two why the work should be approved (at least 20 characters).")}`);
+  const db = createAdminClient();
+  const { data: sub } = await db.from("submissions").select("id").eq("task_id", taskId).eq("doer_id", me.id).maybeSingle();
+  if (!sub) redirect(`/tasks/${taskId}`);
+  const { error } = await db.rpc("open_appeal", { p_submission: sub.id, p_doer: me.id, p_reason: reason });
+  if (error) {
+    const msg = error.message.includes("no longer be appealed") ? "The time to appeal has passed." : error.message.includes("duplicate") ? "You've already appealed this." : "Something went wrong. Please try again.";
+    redirect(`/tasks/${taskId}/done?error=${encodeURIComponent(msg)}`);
+  }
+  redirect(`/tasks/${taskId}/done`);
+}

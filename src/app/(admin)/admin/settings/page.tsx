@@ -1,0 +1,132 @@
+import type { Metadata } from "next";
+import { Icon } from "@/components/Icon";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { lagosDate, requireStaff, ROLE_NAMES, type StaffRole } from "@/lib/staff";
+import { Top } from "../Top";
+import { addStaff, setStaffActive, setSwitch } from "./actions";
+
+export const metadata: Metadata = { title: "Settings" };
+
+const SWITCHES = [
+  { key: "pilot_all_tasks_need_approval", title: "Every task waits for approval", on: "Pilot rule: staff check every funded task before doers see it.", off: "Tasks go live as soon as they're funded. Not recommended during the pilot." },
+  { key: "withdrawals_paused", title: "Withdrawals paused", on: "Nobody can withdraw. Switched on automatically when a money check finds a difference.", off: "People can withdraw as normal." },
+];
+const ACTION: Record<string, string> = {
+  "task.approve": "Approved a task", "task.reject": "Turned down a task", "appeal.decide": "Decided an appeal", "user.suspend": "Suspended an account",
+  "user.restore": "Restored an account", "money.check": "Recorded a statement", "money.explain": "Explained a difference", "settings.update": "Changed a setting",
+  "staff.add": "Added staff", "staff.remove": "Removed staff", "staff.restore": "Restored staff",
+};
+const ROLE_HELP: Record<StaffRole, string> = {
+  owner: "Everything, including settings and staff",
+  moderator: "Task approvals, disputes, suspending accounts",
+  finance: "Money check and payouts",
+  support: "Looking up accounts",
+};
+
+export default async function Settings({ searchParams }: { searchParams: Promise<{ done?: string; error?: string }> }) {
+  const me = await requireStaff();
+  const sp = await searchParams;
+  const owner = me.role === "owner";
+  const db = createAdminClient();
+  let logQuery = db.from("staff_activity").select("id, action, target_type, target_id, detail, created_at, users!staff_activity_staff_id_fkey(full_name)").order("created_at", { ascending: false }).limit(100);
+  if (!owner) logQuery = logQuery.eq("staff_id", me.id);
+  const [settings, team, log] = await Promise.all([
+    db.from("platform_settings").select("key, value").in("key", SWITCHES.map((s) => s.key)),
+    owner ? db.from("staff_members").select("user_id, role, email, active, added_at, users!staff_members_user_id_fkey(full_name, phone)").order("added_at") : Promise.resolve({ data: [] }),
+    logQuery,
+  ]);
+  const val = Object.fromEntries((settings.data ?? []).map((s) => [s.key as string, s.value === true]));
+  type T = { user_id: string; role: StaffRole; email: string; active: boolean; added_at: string; users: { full_name: string | null; phone: string } | null };
+  const staff = (team.data ?? []) as unknown as T[];
+
+  return (
+    <>
+      <Top title={owner ? "Settings" : "Your activity"} sub={owner ? "Switches, staff and the activity log. Every change is logged with your name." : "Everything you've done in admin, newest first"} />
+      <div className="ad-body">
+        {sp.done && <div className="c-note" role="status"><Icon name="check" size={18} /><span>{sp.done === "added" ? "Added. They sign in to the Doova app with their phone, then open doova.ng/admin to set up their authenticator." : "Saved."}</span></div>}
+        {sp.error && <p className="c-error" role="alert">{sp.error}</p>}
+        {owner && (
+          <div className="ad-two">
+            <div className="ad-col">
+              <section className="c-card">
+                <h2 className="c-h2" style={{ marginBottom: 6 }}>Switches</h2>
+                {SWITCHES.map((s) => (
+                  <div key={s.key} className="ad-check" style={{ alignItems: "center" }}>
+                    <span style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
+                      <strong style={{ fontSize: 15 }}>{s.title}: {val[s.key] ? "on" : "off"}</strong>
+                      <span className="c-small">{val[s.key] ? s.on : s.off}</span>
+                    </span>
+                    <form action={setSwitch.bind(null, s.key, !val[s.key])}>
+                      <button className="c-btn c-btn-quiet" style={{ minHeight: 40 }}>{val[s.key] ? "Switch off" : "Switch on"}</button>
+                    </form>
+                  </div>
+                ))}
+                <p className="c-small" style={{ marginTop: 10 }}>Fees, limits and other rules stay fixed in the database for now.</p>
+              </section>
+              <section className="c-card">
+                <h2 className="c-h2" style={{ marginBottom: 6 }}>Team</h2>
+                {staff.map((s) => (
+                  <div key={s.user_id} className="ad-check" style={{ alignItems: "center", opacity: s.active ? 1 : 0.55 }}>
+                    <span style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1, minWidth: 0 }}>
+                      <strong style={{ fontSize: 15 }}>{s.users?.full_name} · {ROLE_NAMES[s.role]}{s.active ? "" : " · removed"}</strong>
+                      <span className="c-small" style={{ overflowWrap: "anywhere" }}>{s.email} · {s.users?.phone}</span>
+                    </span>
+                    {s.user_id !== me.id && (
+                      <form action={setStaffActive.bind(null, s.user_id, !s.active)}>
+                        <button className="c-btn c-btn-quiet" style={{ minHeight: 40 }}>{s.active ? "Remove" : "Restore"}</button>
+                      </form>
+                    )}
+                  </div>
+                ))}
+              </section>
+            </div>
+            <div className="ad-col">
+              <section className="c-card">
+                <h2 className="c-h2" style={{ marginBottom: 6 }}>Add staff</h2>
+                <p className="c-small" style={{ marginBottom: 12 }}>They need a Doova account first (sign up in the app with their phone).</p>
+                <form action={addStaff} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <label className="c-field"><span className="c-label">Their Doova phone number</span>
+                    <input name="phone" className="c-input" inputMode="tel" placeholder="0803 123 4567" required /></label>
+                  <label className="c-field"><span className="c-label">Work email (for admin sign-in)</span>
+                    <input name="email" type="email" className="c-input" required /></label>
+                  <fieldset style={{ border: 0, padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+                    <legend className="c-label" style={{ marginBottom: 8 }}>Role</legend>
+                    {(Object.keys(ROLE_HELP) as StaffRole[]).map((r) => (
+                      <label key={r} className="c-choice" style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: 12, borderRadius: 12, border: "1px solid rgba(17,17,17,.14)", cursor: "pointer" }}>
+                        <input type="radio" name="role" value={r} defaultChecked={r === "moderator"} style={{ marginTop: 3 }} />
+                        <span style={{ display: "flex", flexDirection: "column" }}><strong style={{ fontSize: 15 }}>{ROLE_NAMES[r]}</strong><span className="c-small">{ROLE_HELP[r]}</span></span>
+                      </label>
+                    ))}
+                  </fieldset>
+                  <button className="c-btn c-btn-primary c-btn-block">Add to the team</button>
+                </form>
+              </section>
+            </div>
+          </div>
+        )}
+        <h2 className="c-sec">{owner ? "Activity log" : "Activity"}</h2>
+        {(log.data ?? []).length === 0 ? <div className="c-card"><p className="c-sub">Nothing yet.</p></div> : (
+          <div className="ad-table-wrap">
+            <table className="ad-table">
+              <thead><tr><th>When</th><th>Who</th><th>What</th><th>Detail</th></tr></thead>
+              <tbody>{(log.data ?? []).map((l) => {
+                const d = (l.detail ?? {}) as Record<string, unknown>;
+                const detail = [d.note, d.role, d.email, d.to !== undefined ? `${l.target_id} → ${d.to ? "on" : "off"}` : null,
+                  d.difference_kobo !== undefined ? `difference ₦${(Number(d.difference_kobo) / 100).toLocaleString("en-NG")}` : null,
+                  d.for_doer !== undefined ? (d.for_doer ? "for the doer" : "for the creator") : null].filter(Boolean).join(" · ");
+                return (
+                  <tr key={l.id}>
+                    <td className="c-small" style={{ whiteSpace: "nowrap" }}>{lagosDate(l.created_at)}</td>
+                    <td>{(l.users as unknown as { full_name: string } | null)?.full_name}</td>
+                    <td>{ACTION[l.action] ?? l.action}</td>
+                    <td className="c-small">{detail}</td>
+                  </tr>
+                );
+              })}</tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}

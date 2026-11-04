@@ -8,12 +8,12 @@ import { TIER_NAMES } from "@/lib/tasks";
 
 export const metadata: Metadata = { title: "Creator overview" };
 
-type T = { id: string; title: string; status: string; reward_kobo: number; slots: number; ends_at: string; created_at: string };
+type T = { id: string; title: string; status: string; reward_kobo: number; slots: number; ends_at: string; created_at: string; moderated_at: string | null; went_live_at: string | null };
 
 export default async function CreatorHome() {
   const me = await requireProfile();
   const db = createAdminClient();
-  const { data } = await db.from("tasks").select("id, title, status, reward_kobo, slots, ends_at, created_at")
+  const { data } = await db.from("tasks").select("id, title, status, reward_kobo, slots, ends_at, created_at, moderated_at, went_live_at")
     .eq("creator_type", "user").eq("creator_id", me.id).order("created_at", { ascending: false }).limit(100);
   const tasks = (data ?? []) as T[];
   const ids = tasks.map((t) => t.id);
@@ -69,7 +69,7 @@ export default async function CreatorHome() {
           {tasks.map((t) => {
             const approved = count(t.id, ["approved"]);
             const pct = Math.round((approved / t.slots) * 100);
-            const st = TASK_STATUS[t.status] ?? TASK_STATUS.draft;
+            const st = t.status === "settled" && t.moderated_at && !t.went_live_at ? TASK_STATUS.rejected_by_moderation : TASK_STATUS[t.status] ?? TASK_STATUS.draft;
             const toReview = count(t.id, ["submitted"]);
             const href = t.status === "pending_funding" ? `/create/tasks/${t.id}/fund` : `/create/tasks/${t.id}`;
             return (

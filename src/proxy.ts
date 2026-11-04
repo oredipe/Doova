@@ -34,6 +34,12 @@ export async function proxy(request: NextRequest) {
   const signedIn = Boolean(claims?.sub);
   const path = request.nextUrl.pathname;
 
+  if (!signedIn && (path === "/admin" || (path.startsWith("/admin/") && path !== "/admin/sign-in"))) {
+    const to = request.nextUrl.clone();
+    to.pathname = "/admin/sign-in";
+    to.search = "";
+    return NextResponse.redirect(to);
+  }
   if (!signedIn && APP_PATHS.some((p) => path === p || path.startsWith(p + "/"))) {
     const to = request.nextUrl.clone();
     to.pathname = "/sign-in";

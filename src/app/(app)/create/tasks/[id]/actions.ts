@@ -36,16 +36,6 @@ export async function addTestMoney(taskId: string) {
   redirect(`/create/tasks/${taskId}/fund`);
 }
 
-/** TEST MODE ONLY: approve your own task as Doova would, until the admin dashboard exists (step 4). */
-export async function testApproveTask(taskId: string) {
-  if (!testMode()) throw new Error("Test approval is switched off.");
-  const me = await requireProfile();
-  await loadOwnTask(taskId, me);
-  const db = createAdminClient();
-  await db.rpc("moderate_task", { p_task: taskId, p_approve: true, p_note: "Approved in test mode" });
-  redirect(`/create/tasks/${taskId}`);
-}
-
 export async function approveResponse(taskId: string, submissionId: string) {
   const me = await requireProfile();
   await loadOwnTask(taskId, me);

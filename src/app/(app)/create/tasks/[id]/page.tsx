@@ -4,9 +4,9 @@ import { Icon } from "@/components/Icon";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { naira, requireProfile } from "@/lib/profile";
 import { nowMs } from "@/lib/time";
-import { feeKobo, FLAG, loadOwnTask, shortName, TASK_STATUS, testMode } from "@/lib/creator";
+import { feeKobo, FLAG, loadOwnTask, shortName, TASK_STATUS } from "@/lib/creator";
 import type { Answers } from "@/lib/tasks";
-import { closeTask, testApproveTask } from "./actions";
+import { closeTask } from "./actions";
 
 export const metadata: Metadata = { title: "Your task" };
 
@@ -31,7 +31,8 @@ export default async function CreatorTaskPage({ params, searchParams }: {
   const by = (s: string[]) => subs.filter((x) => s.includes(x.status));
   const approved = by(["approved"]), waiting = by(["submitted"]), rejected = by(["rejected", "rejected_final", "appealed"]);
   const inProgress = subs.filter((x) => x.status === "reserved");
-  const st = TASK_STATUS[t.status] ?? TASK_STATUS.draft;
+  const turnedDown = t.status === "settled" && !!t.moderated_at && !t.went_live_at;
+  const st = turnedDown ? TASK_STATUS.rejected_by_moderation : TASK_STATUS[t.status] ?? TASK_STATUS.draft;
   const tab = sp.tab === "results" ? "results" : sp.tab === "details" ? "details" : "review";
   const pct = Math.round((approved.length / t.slots) * 100);
   const due = (s: Sub) => new Date(new Date(s.submitted_at!).getTime() + t.auto_approve_hours * 3600_000);
@@ -55,11 +56,13 @@ export default async function CreatorTaskPage({ params, searchParams }: {
       {sp.reviewed && <div className="c-note" role="status"><Icon name="check" size={18} /><span>All caught up. Nothing waiting for you on this task.</span></div>}
       {sp.error && <p className="c-error" role="alert">{sp.error}</p>}
 
-      {t.status === "under_moderation" && testMode() && (
-        <form action={testApproveTask.bind(null, id)} className="c-card" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <span className="c-small">Test mode: until the admin dashboard is built, you can approve your own task here.</span>
-          <button className="c-btn c-btn-quiet">Approve as Doova (test mode)</button>
-        </form>
+      {turnedDown && (
+        <section className="c-card" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <h2 className="c-h2">Doova didn&rsquo;t approve this task</h2>
+          {t.moderation_note && <p style={{ margin: 0, background: "var(--c-ground)", borderRadius: 12, padding: "12px 14px", lineHeight: 1.5 }}>&ldquo;{t.moderation_note}&rdquo;</p>}
+          <p className="c-sub" style={{ margin: 0 }}>All {naira(t.reward_kobo * t.slots + (t.fee_kobo ?? 0))} went back to your Creator funds, fee included. Fix what&rsquo;s mentioned and post it again.</p>
+          <Link href="/create/new" className="c-btn c-btn-primary" style={{ alignSelf: "flex-start" }}>Post a new task</Link>
+        </section>
       )}
 
       <section className="c-card" style={{ display: "flex", flexDirection: "column", gap: 12 }}>

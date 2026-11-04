@@ -4,12 +4,14 @@ import { redirect } from "next/navigation";
 import { Icon } from "@/components/Icon";
 import { naira, requireProfile } from "@/lib/profile";
 import { feeKobo, loadOwnTask, testMode, walletBalance } from "@/lib/creator";
+import { AccountNumber } from "@/views/AccountNumber";
+import { paystackConfigured } from "@/lib/paystack";
 import { addTestMoney, fundFromWallet } from "../actions";
 
 export const metadata: Metadata = { title: "Fund your task" };
 
-export default async function FundPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string }> }) {
-  const [{ id }, { error }] = await Promise.all([params, searchParams]);
+export default async function FundPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string; acct_error?: string }> }) {
+  const [{ id }, { error, acct_error }] = await Promise.all([params, searchParams]);
   const me = await requireProfile();
   const t = await loadOwnTask(id, me);
   if (t.status !== "pending_funding") redirect(`/create/tasks/${id}`);
@@ -47,11 +49,8 @@ export default async function FundPage({ params, searchParams }: { params: Promi
       ) : (
         <section className="c-card" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <h2 className="c-h2">Add {naira(short)} to your Creator funds</h2>
-          <div className="c-account">
-            <span className="c-small">Your Doova account number</span>
-            <b>Coming soon</b>
-            <span className="c-small">Once Paystack is connected, you&rsquo;ll get your own account number here. Transfers land in your Creator funds within minutes, at no extra cost.</span>
-          </div>
+          <AccountNumber back={`/create/tasks/${id}/fund`} error={acct_error} />
+          {paystackConfigured() && <span className="c-small">After you transfer, refresh this page. You can fund the task as soon as the money shows in your Creator funds.</span>}
           {testMode() && (
             <form action={addTestMoney.bind(null, id)} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <button className="c-btn c-btn-quiet c-btn-block">Add {naira(short)} test money</button>

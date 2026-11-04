@@ -58,6 +58,23 @@ Supabase needs **Authentication → Sign In / Providers → Email** enabled (for
 **Multi-Factor → TOTP** enabled (on by default). Add more staff from Settings in the dashboard; they sign
 up in the app first.
 
+### Payments (Paystack)
+Without a Paystack key, a built-in stand-in is used in test mode: bank checks echo your name and
+withdrawals are marked sent straight away. To connect Paystack:
+
+1. In Paystack, **Settings → API Keys & Webhooks**: copy the **Test Secret Key** into Vercel as
+   `PAYSTACK_SECRET_KEY`, and set the **Test Webhook URL** to `https://YOUR-SITE/api/paystack/webhook`.
+2. Paystack **Transfer approvals**: untick "Confirm transfers before sending" (no OTP), so withdrawals
+   go out automatically.
+3. Ask Paystack to enable **Dedicated Virtual Accounts** (creator account numbers). In test mode they
+   come from "Test Bank"; send test money with Paystack's demo bank app.
+4. Going live: swap in the live secret key and live webhook URL. Optional `PAYSTACK_PREFERRED_BANK`
+   (`titan-paystack` by default, or `wema-bank`).
+
+**NIN checks** need an identity provider (Paystack doesn't check NINs); until `NIN_PROVIDER` is set,
+test mode accepts any 11 digits and uses the person's profile name. Before going live, set
+`NIN_HASH_SECRET` in Vercel to a long random string and never change it (it keeps one NIN per account).
+
 ### 3. Text messages (later)
 When the Termii account is ready: Supabase **Authentication → Hooks → Send SMS hook → HTTPS**,
 URL `https://YOUR-SITE/api/auth/sms-hook`. Put its secret in Vercel as `SUPABASE_SMS_HOOK_SECRET`,
@@ -96,7 +113,7 @@ TEST_DATABASE_URL=postgres://localhost/doova_test ./supabase/tests/run_all.sh
 
 It runs the money and workflow scenarios (`smoke_test.sql`), creator tiers, doer levels, XP,
 streaks, badges, staff and laptop sign-in (`progression_test.sql`), the admin dashboard's staff
-functions (`admin_test.sql`), and a 40-people-for-10-slots race test.
+functions (`admin_test.sql`), NIN, bank accounts and withdrawals (`bank_test.sql`), and a 40-people-for-10-slots race test.
 
 ## Decisions built in (November 2026)
 - 15% platform fee on top of rewards; ₦100 per withdrawal; ₦1,500 minimum; no maximum or daily limit.

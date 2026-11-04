@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { naira } from "@/lib/profile";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { lagosDate, requireStaff } from "@/lib/staff";
+import { can, lagosDate, requireStaff } from "@/lib/staff";
+import { paystackConfigured } from "@/lib/paystack";
+import { checkPayout } from "./actions";
 import { Top } from "../Top";
 
 export const metadata: Metadata = { title: "Payouts" };
@@ -19,8 +21,8 @@ const PILL: Record<string, [string, string]> = {
 type P = { id: string; owner_type: string; owner_id: string; provider: string; amount_kobo: number; transfer_kobo: number; withdrawal_fee_kobo: number;
   status: string; failure_reason: string | null; requested_at: string; completed_at: string | null; purse: string };
 
-export default async function Payouts({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
-  await requireStaff("money.view");
+export default async function Payouts({ searchParams }: { searchParams: Promise<{ tab?: string; checked?: string }> }) {
+  const me = await requireStaff("money.view");
   const sp = await searchParams;
   const tab = TABS.find((x) => x.key === sp.tab) ?? TABS[0];
   const db = createAdminClient();
@@ -38,7 +40,8 @@ export default async function Payouts({ searchParams }: { searchParams: Promise<
       <Top title="Payouts" sub="Withdrawals to people's banks. Paystack or Monnify reports back on each one." />
       <div className="ops-body">
         {paused.data?.value === true && <p className="c-error" role="alert">Withdrawals are paused because the last money check found a difference. An owner can switch them back on in Settings once it&rsquo;s explained.</p>}
-        <div className="c-note"><span>Withdrawals open once Paystack is connected. Until then nothing appears here. When a transfer fails, the full amount (fee included) goes straight back to the person&rsquo;s balance, and it shows here so you can contact them.</span></div>
+        {sp.checked && <div className="c-note" role="status"><span>{sp.checked}</span></div>}
+        <div className="c-note"><span>{paystackConfigured() ? "Paystack reports back on every transfer automatically." : "Paystack isn't connected yet: withdrawals here are test-mode pretend ones."} When a transfer fails, the full amount (fee included) goes straight back to the person&rsquo;s balance, and it shows here so you can contact them. If one stays &ldquo;Sending&rdquo; for more than an hour, use Check with Paystack.</span></div>
         <nav className="c-tabs" aria-label="Payout status">
           {TABS.map((x) => <Link key={x.key} href={`/admin/payouts?tab=${x.key}`} className="c-tab" aria-current={x.key === tab.key ? "page" : undefined}>{x.label}</Link>)}
         </nav>
@@ -53,7 +56,10 @@ export default async function Payouts({ searchParams }: { searchParams: Promise<
                   <td className="c-small">{p.purse === "earnings" ? "Earnings" : "Creator funds"}</td>
                   <td className="c-small" style={{ textTransform: "capitalize" }}>{p.provider}</td>
                   <td><span className={PILL[p.status]?.[0]}>{PILL[p.status]?.[1]}</span>{p.failure_reason && <div className="c-small" style={{ marginTop: 4 }}>{p.failure_reason}</div>}</td>
-                  <td className="c-small" style={{ whiteSpace: "nowrap" }}>{lagosDate(p.requested_at)}</td>
+                  <td className="c-small" style={{ whiteSpace: "nowrap" }}>{lagosDate(p.requested_at)}
+                    {["pending", "processing"].includes(p.status) && paystackConfigured() && can(me.role, "payout.retry") && (
+                      <form action={checkPayout.bind(null, p.id)} style={{ marginTop: 6 }}><button className="c-link">Check with Paystack</button></form>
+                    )}</td>
                 </tr>))}
               </tbody>
             </table>

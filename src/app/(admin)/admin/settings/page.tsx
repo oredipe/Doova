@@ -14,7 +14,7 @@ const SWITCHES = [
 const ACTION: Record<string, string> = {
   "task.approve": "Approved a task", "task.reject": "Turned down a task", "appeal.decide": "Decided an appeal", "user.suspend": "Suspended an account",
   "user.restore": "Restored an account", "money.check": "Recorded a statement", "money.explain": "Explained a difference", "settings.update": "Changed a setting",
-  "staff.add": "Added staff", "staff.remove": "Removed staff", "staff.restore": "Restored staff",
+  "payout.check": "Checked a payout with Paystack", "staff.add": "Added staff", "staff.remove": "Removed staff", "staff.restore": "Restored staff",
 };
 const ROLE_HELP: Record<StaffRole, string> = {
   owner: "Everything, including settings and staff",

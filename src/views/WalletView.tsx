@@ -1,4 +1,7 @@
+import Link from "next/link";
+import { Icon } from "@/components/Icon";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { AccountNumber } from "./AccountNumber";
 import { naira, requireProfile } from "@/lib/profile";
 
 type Entry = { entry_id: number; kind: string; memo: string | null; reference_type: string | null; reference_id: string | null; amount_kobo: number; created_at: string };
@@ -9,16 +12,22 @@ const LABEL: Record<string, string> = {
 };
 
 /** Each person has two balances: Earnings (Earn) and Creator funds (Create). */
-export async function WalletView({ purse }: { purse: "earnings" | "funds" }) {
+export async function WalletView({ purse, sp = {} }: { purse: "earnings" | "funds"; sp?: { withdrawn?: string; acct_error?: string } }) {
+  const base = purse === "earnings" ? "/wallet" : "/create/wallet";
   const earn = purse === "earnings";
   const me = await requireProfile();
   const db = createAdminClient();
-  const [{ data: bal }, { data: hist }, { data: pending }] = await Promise.all([
+  const [{ data: bal }, { data: hist }, { data: pending }, { data: payouts }] = await Promise.all([
     db.from("v_wallet_balances").select("balance_kobo").eq("owner_type", "user").eq("owner_id", me.id).eq("purse", purse).maybeSingle(),
     db.from("v_wallet_history").select("entry_id, kind, memo, reference_type, reference_id, amount_kobo, created_at")
       .eq("owner_type", "user").eq("owner_id", me.id).eq("purse", purse).order("created_at", { ascending: false }).limit(100),
     db.from("submissions").select("tasks(reward_kobo)").eq("doer_id", me.id).in("status", ["submitted", "appealed"]),
+    db.from("payouts").select("id, amount_kobo, transfer_kobo, status, failure_reason, requested_at, bank_accounts(bank_name, account_number)")
+      .eq("owner_type", "user").eq("owner_id", me.id).eq("purse", purse).order("requested_at", { ascending: false }).limit(5),
   ]);
+  type Payout = { id: string; amount_kobo: number; transfer_kobo: number; status: string; failure_reason: string | null; requested_at: string; bank_accounts: { bank_name: string | null; account_number: string } | null };
+  const recent = (payouts ?? []) as unknown as Payout[];
+  const STATUS: Record<string, [string, string]> = { pending: ["c-pill c-pill-quiet", "Sending"], processing: ["c-pill c-pill-active", "On the way"], succeeded: ["c-pill c-pill-lime", "Sent"], failed: ["c-pill c-pill-bad", "Didn't go through"] };
   const balance = Number(bal?.balance_kobo ?? 0);
   const entries = (hist ?? []) as Entry[];
   const onTheWay = !earn ? 0 : ((pending ?? []) as unknown as { tasks: { reward_kobo: number } | null }[]).reduce((s, p) => s + (p.tasks?.reward_kobo ?? 0), 0);
@@ -35,21 +44,38 @@ export async function WalletView({ purse }: { purse: "earnings" | "funds" }) {
   return (
     <>
       <h1 className="c-title">{earn ? "Earnings" : "Creator funds"}</h1>
+      {sp.withdrawn && <div className="c-note" role="status"><Icon name="check" size={18} /><span>Withdrawal of ₦{Number(sp.withdrawn).toLocaleString("en-NG")} is on its way to your bank. It usually arrives within minutes.</span></div>}
       <section className="c-card c-dark" style={{ display: "flex", flexDirection: "column", gap: 14, padding: 24 }}>
         <span className="c-small">{earn ? "Available to withdraw" : "Available to fund tasks"}</span>
         <span style={{ fontSize: 40, fontWeight: 700, letterSpacing: "-0.03em" }}>{naira(balance)}</span>
         {onTheWay > 0 && <span className="c-small">{naira(onTheWay)} on the way from work waiting for review</span>}
-        {earn ? (
-          <>
-            <button className="c-btn c-btn-money" disabled style={{ alignSelf: "flex-start" }} title="Withdrawals arrive in a later update">
-              Withdraw
-            </button>
-            <span className="c-small">Money from tasks you do. Withdraw from ₦1,500 to any bank in your name. ₦100 per withdrawal. Withdrawals open in a later update.</span>
-          </>
-        ) : (
-          <span className="c-small">Money you add to pay for tasks. Unused task money comes back here. This is separate from what you earn doing tasks.</span>
-        )}
+        <Link href={`${base}/withdraw`} className="c-btn c-btn-money" style={{ alignSelf: "flex-start" }}>Withdraw</Link>
+        <span className="c-small">{earn
+          ? "Money from tasks you do. Withdraw from ₦1,500 to a bank account in your name. ₦100 per withdrawal."
+          : "Money you add to pay for tasks. Unused task money comes back here. You can withdraw what you don't need (₦100 per withdrawal)."}</span>
       </section>
+      {!earn && (
+        <section className="c-card" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <h2 className="c-h2">Add money</h2>
+          <AccountNumber back="/create/wallet" error={sp.acct_error} />
+        </section>
+      )}
+      {recent.length > 0 && (
+        <>
+          <h2 className="c-sec">Withdrawals</h2>
+          <div className="c-group">
+            {recent.map((p) => (
+              <div key={p.id} className="c-row">
+                <span className="c-row-main">
+                  <span className="c-row-title" style={{ fontSize: 16 }}>{naira(p.transfer_kobo)} to {p.bank_accounts?.bank_name ?? "your bank"} ••{p.bank_accounts?.account_number.slice(-4)}</span>
+                  <span className="c-small">{fmt(p.requested_at)}{p.status === "failed" ? ` · ${naira(p.amount_kobo)} is back in your balance` : ""}</span>
+                </span>
+                <span className={STATUS[p.status]?.[0]}>{STATUS[p.status]?.[1]}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
       <h2 className="c-sec">History</h2>
       {entries.length === 0 ? (
         <div className="c-card empty" style={{ padding: 28 }}>

@@ -15,6 +15,13 @@ const PATHS: Record<string, React.ReactNode> = {
   info: (<><circle cx="12" cy="12" r="8.5" /><path d="M12 11v5M12 8h.01" /></>),
   out: (<><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4M10 16l-4-4 4-4M6 12h10" /></>),
   user: (<><circle cx="12" cy="8.5" r="3.5" /><path d="M5 20c1.2-3.5 4-5 7-5s5.8 1.5 7 5" /></>),
+  plus: (<><path d="M12 5v14M5 12h14" /></>),
+  download: (<><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14" /></>),
+  x: (<><path d="M6 6l12 12M18 6L6 18" /></>),
+  users: (<><circle cx="9" cy="8.5" r="3.2" /><path d="M3 19.5c.9-3 3.2-4.5 6-4.5s5.1 1.5 6 4.5" /><path d="M16 5.5a3 3 0 0 1 0 6M18 15c1.6.6 2.6 2.1 3 4.5" /></>),
+  trash: (<><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13" /></>),
+  up: (<><path d="M6 15l6-6 6 6" /></>),
+  down: (<><path d="M6 9l6 6 6-6" /></>),
 };
 
 export type IconName = keyof typeof PATHS;

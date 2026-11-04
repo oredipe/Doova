@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // Runs before each page: refreshes the Supabase session cookie and keeps signed-out
 // people out of the app pages. (Next.js 16 calls this file "proxy"; it used to be "middleware".)
 
-const APP_PATHS = ["/tasks", "/my-tasks", "/wallet", "/settings"];
+const APP_PATHS = ["/tasks", "/my-tasks", "/wallet", "/settings", "/create"];
 const AUTH_PATHS = ["/sign-in", "/sign-up"];
 
 export async function proxy(request: NextRequest) {

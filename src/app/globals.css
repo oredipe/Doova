@@ -150,3 +150,16 @@ fieldset[aria-invalid="true"] .c-choice, fieldset[aria-invalid="true"] .c-rate s
 /* ---------- paid ---------- */
 .paid-head { background: var(--c-paid); border-radius: 24px; padding: 28px 24px; display: flex; flex-direction: column; gap: 8px; }
 .paid-amount { font-size: 56px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; }
+
+/* ---------- creator pieces ---------- */
+.c-chip { flex: none; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid rgba(17, 17, 17, 0.14); background: var(--c-surface); font-size: 14px; color: var(--c-ink); cursor: pointer; }
+.c-chip[aria-pressed="true"] { background: var(--c-ink); color: #FFFFFF; border-color: var(--c-ink); }
+.c-ic-btn { width: 40px; height: 40px; flex: none; border-radius: 10px; border: 1px solid var(--c-line); background: var(--c-surface); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: var(--c-ink); }
+.c-ic-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.c-tabs { display: flex; gap: 22px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--c-line); }
+.c-tab { flex: none; padding: 12px 0; font-size: 15px; color: var(--c-muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.c-tab[aria-current="page"] { color: var(--c-ink); font-weight: 600; border-bottom-color: var(--c-ink); }
+.c-account { display: flex; flex-direction: column; gap: 4px; padding: 16px; border-radius: 14px; background: var(--c-ground); }
+.c-account b { font-size: 26px; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+.shell-switch { display: none; }
+@media (min-width: 900px) { .shell-switch { display: inline; } }

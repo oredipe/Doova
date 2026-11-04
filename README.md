@@ -37,6 +37,11 @@ for testing the doer flow. The sample money is pretend; start a fresh database b
 3. Deploy. Every push to `main` deploys again.
 4. In Supabase **Authentication → URL Configuration**, set **Site URL** to your `*.vercel.app` address.
 
+### Test mode (pilot only)
+Add `DOOVA_TEST_MODE` = `on` in Vercel's environment variables to try the creator side before Paystack and
+the admin dashboard exist: creators get an "Add test money" button when funding and can approve their own
+task. The money is pretend. Remove the variable (and start a fresh database) before real launch.
+
 ### 3. Text messages (later)
 When the Termii account is ready: Supabase **Authentication → Hooks → Send SMS hook → HTTPS**,
 URL `https://YOUR-SITE/api/auth/sms-hook`. Put its secret in Vercel as `SUPABASE_SMS_HOOK_SECRET`,

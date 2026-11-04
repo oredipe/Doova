@@ -36,15 +36,15 @@ export default async function Payouts({ searchParams }: { searchParams: Promise<
   return (
     <>
       <Top title="Payouts" sub="Withdrawals to people's banks. Paystack or Monnify reports back on each one." />
-      <div className="ad-body">
+      <div className="ops-body">
         {paused.data?.value === true && <p className="c-error" role="alert">Withdrawals are paused because the last money check found a difference. An owner can switch them back on in Settings once it&rsquo;s explained.</p>}
         <div className="c-note"><span>Withdrawals open once Paystack is connected. Until then nothing appears here. When a transfer fails, the full amount (fee included) goes straight back to the person&rsquo;s balance, and it shows here so you can contact them.</span></div>
         <nav className="c-tabs" aria-label="Payout status">
           {TABS.map((x) => <Link key={x.key} href={`/admin/payouts?tab=${x.key}`} className="c-tab" aria-current={x.key === tab.key ? "page" : undefined}>{x.label}</Link>)}
         </nav>
         {rows.length === 0 ? <div className="c-card"><p className="c-sub">Nothing {tab.key === "failed" ? "failed" : tab.key === "waiting" ? "on the way" : "paid yet"}.</p></div> : (
-          <div className="ad-table-wrap">
-            <table className="ad-table">
+          <div className="ops-table-wrap">
+            <table className="ops-table">
               <thead><tr><th>Person</th><th>Amount</th><th>Reaches their bank</th><th>From</th><th>Partner</th><th>Status</th><th>Requested</th></tr></thead>
               <tbody>{rows.map((p) => (
                 <tr key={p.id}>

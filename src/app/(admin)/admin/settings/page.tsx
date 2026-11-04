@@ -42,16 +42,16 @@ export default async function Settings({ searchParams }: { searchParams: Promise
   return (
     <>
       <Top title={owner ? "Settings" : "Your activity"} sub={owner ? "Switches, staff and the activity log. Every change is logged with your name." : "Everything you've done in admin, newest first"} />
-      <div className="ad-body">
+      <div className="ops-body">
         {sp.done && <div className="c-note" role="status"><Icon name="check" size={18} /><span>{sp.done === "added" ? "Added. They sign in to the Doova app with their phone, then open doova.ng/admin to set up their authenticator." : "Saved."}</span></div>}
         {sp.error && <p className="c-error" role="alert">{sp.error}</p>}
         {owner && (
-          <div className="ad-two">
-            <div className="ad-col">
+          <div className="ops-two">
+            <div className="ops-col">
               <section className="c-card">
                 <h2 className="c-h2" style={{ marginBottom: 6 }}>Switches</h2>
                 {SWITCHES.map((s) => (
-                  <div key={s.key} className="ad-check" style={{ alignItems: "center" }}>
+                  <div key={s.key} className="ops-check" style={{ alignItems: "center" }}>
                     <span style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
                       <strong style={{ fontSize: 15 }}>{s.title}: {val[s.key] ? "on" : "off"}</strong>
                       <span className="c-small">{val[s.key] ? s.on : s.off}</span>
@@ -66,7 +66,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
               <section className="c-card">
                 <h2 className="c-h2" style={{ marginBottom: 6 }}>Team</h2>
                 {staff.map((s) => (
-                  <div key={s.user_id} className="ad-check" style={{ alignItems: "center", opacity: s.active ? 1 : 0.55 }}>
+                  <div key={s.user_id} className="ops-check" style={{ alignItems: "center", opacity: s.active ? 1 : 0.55 }}>
                     <span style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1, minWidth: 0 }}>
                       <strong style={{ fontSize: 15 }}>{s.users?.full_name} · {ROLE_NAMES[s.role]}{s.active ? "" : " · removed"}</strong>
                       <span className="c-small" style={{ overflowWrap: "anywhere" }}>{s.email} · {s.users?.phone}</span>
@@ -80,7 +80,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
                 ))}
               </section>
             </div>
-            <div className="ad-col">
+            <div className="ops-col">
               <section className="c-card">
                 <h2 className="c-h2" style={{ marginBottom: 6 }}>Add staff</h2>
                 <p className="c-small" style={{ marginBottom: 12 }}>They need a Doova account first (sign up in the app with their phone).</p>
@@ -106,8 +106,8 @@ export default async function Settings({ searchParams }: { searchParams: Promise
         )}
         <h2 className="c-sec">{owner ? "Activity log" : "Activity"}</h2>
         {(log.data ?? []).length === 0 ? <div className="c-card"><p className="c-sub">Nothing yet.</p></div> : (
-          <div className="ad-table-wrap">
-            <table className="ad-table">
+          <div className="ops-table-wrap">
+            <table className="ops-table">
               <thead><tr><th>When</th><th>Who</th><th>What</th><th>Detail</th></tr></thead>
               <tbody>{(log.data ?? []).map((l) => {
                 const d = (l.detail ?? {}) as Record<string, unknown>;

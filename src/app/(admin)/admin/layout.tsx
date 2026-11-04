@@ -32,7 +32,7 @@ async function Side() {
   return (
     <>
       <AdminNav groups={[{ label: "Today", items: [{ href: "/admin", label: "Overview" }] }, { label: "Queues", items: queues }, { label: "Records", items: records }]} />
-      <div className="ad-me">
+      <div className="ops-me">
         <span style={{ width: 40, height: 40, borderRadius: 999, background: "var(--c-paid-soft)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flex: "none" }}>
           {initialsOf(me.name)}
         </span>
@@ -51,13 +51,13 @@ async function Side() {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   if (!supabaseConfigured()) return <main className="auth-main"><SetupNeeded /></main>;
   return (
-    <div className="ad-shell">
-      <aside className="ad-side">
-        <div className="ad-side-head"><Logo href="/admin" height={22} /><span className="ad-badge">ADMIN</span></div>
+    <div className="ops-shell">
+      <aside className="ops-side">
+        <div className="ops-side-head"><Logo href="/admin" height={22} /><span className="ops-badge">ADMIN</span></div>
         <Suspense fallback={<div style={{ height: 40 }} />}><Side /></Suspense>
       </aside>
-      <div className="ad-main">
-        <Suspense fallback={<div className="ad-body" aria-busy="true"><div className="c-card" style={{ height: 120, opacity: 0.5 }} /></div>}>{children}</Suspense>
+      <div className="ops-main">
+        <Suspense fallback={<div className="ops-body" aria-busy="true"><div className="c-card" style={{ height: 120, opacity: 0.5 }} /></div>}>{children}</Suspense>
       </div>
     </div>
   );

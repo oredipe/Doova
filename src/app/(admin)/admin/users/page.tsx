@@ -25,8 +25,8 @@ export default async function Users({ searchParams }: { searchParams: Promise<{ 
   return (
     <>
       <Top title="Users" sub={term ? `Results for “${term}”` : "Newest first"} />
-      <div className="ad-body">
-        <form className="ad-search" role="search" style={{ maxWidth: 520 }}>
+      <div className="ops-body">
+        <form className="ops-search" role="search" style={{ maxWidth: 520 }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4 4" /></svg>
           <input name="q" defaultValue={term} placeholder="Name or phone number" aria-label="Search people" />
         </form>

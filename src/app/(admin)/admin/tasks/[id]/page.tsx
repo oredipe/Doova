@@ -62,7 +62,7 @@ export default async function CheckTask({ params, searchParams }: { params: Prom
     <>
       <Top title="Check a task" sub={fundedAt ? `Funded ${lagosDate(fundedAt)}${waiting ? ` · waiting ${ago(new Date(fundedAt).getTime(), now)}` : ""}` : undefined}
         back={{ href: "/admin/tasks", label: "Task approvals" }} />
-      <div className="ad-body">
+      <div className="ops-body">
         {sp.error && <p className="c-error" role="alert">{sp.error}</p>}
         {!waiting && (
           <div className="c-note" role="status">
@@ -72,22 +72,22 @@ export default async function CheckTask({ params, searchParams }: { params: Prom
               : t.went_live_at ? "This task went live without staff review (approved before the admin dashboard, or skipped by a setting)." : `This task isn't waiting for a check (status: ${t.status.replace(/_/g, " ")}).`}</span>
           </div>
         )}
-        <div className="ad-two">
-          <div className="ad-col">
+        <div className="ops-two">
+          <div className="ops-col">
             <section className="c-card" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <span className="c-small">As doers will see it</span>
-              <h2 className="c-h1" style={{ margin: 0 }}>{highlight(t.title, flaggedWords).map((p, i) => typeof p === "string" ? p : <mark key={i} className="ad-flagged">{p.flag}</mark>)}</h2>
+              <h2 className="c-h1" style={{ margin: 0 }}>{highlight(t.title, flaggedWords).map((p, i) => typeof p === "string" ? p : <mark key={i} className="ops-flagged">{p.flag}</mark>)}</h2>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{chips.map((x) => <span key={x} className="c-pill c-pill-quiet">{x}</span>)}</div>
               <p style={{ margin: 0, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
-                {highlight(t.instructions, flaggedWords).map((p, i) => typeof p === "string" ? p : <mark key={i} className="ad-flagged">{p.flag}</mark>)}
+                {highlight(t.instructions, flaggedWords).map((p, i) => typeof p === "string" ? p : <mark key={i} className="ops-flagged">{p.flag}</mark>)}
               </p>
               <h3 className="c-h2" style={{ fontSize: 17, marginTop: 6 }}>Questions ({t.form_schema?.questions.length ?? 0})</h3>
               <ol style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column" }}>
                 {(t.form_schema?.questions ?? []).map((q, i) => (
-                  <li key={q.id} className="ad-check">
-                    <span className="ad-dot" style={{ background: "#F2F2EC", fontSize: 12, fontWeight: 700 }}>{i + 1}</span>
+                  <li key={q.id} className="ops-check">
+                    <span className="ops-dot" style={{ background: "#F2F2EC", fontSize: 12, fontWeight: 700 }}>{i + 1}</span>
                     <span style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                      <span>{highlight(q.label, flaggedWords).map((p, j) => typeof p === "string" ? p : <mark key={j} className="ad-flagged">{p.flag}</mark>)}</span>
+                      <span>{highlight(q.label, flaggedWords).map((p, j) => typeof p === "string" ? p : <mark key={j} className="ops-flagged">{p.flag}</mark>)}</span>
                       <span className="c-small">
                         {q.check ? "Attention check · " : ""}{QTYPE[q.type] ?? q.type}
                         {q.options?.length ? `: ${q.options.join(", ")}` : q.type === "rating" ? ` 1 to ${q.scale ?? 5}` : ""}
@@ -101,8 +101,8 @@ export default async function CheckTask({ params, searchParams }: { params: Prom
             <section className="c-card">
               <h2 className="c-h2" style={{ marginBottom: 4 }}>Automatic checks</h2>
               {checks.map((x) => (
-                <div key={x.title} className="ad-check">
-                  <span className={x.ok ? "ad-dot ad-dot-ok" : x.warn ? "ad-dot" : "ad-dot ad-dot-bad"} style={x.ok || !x.warn ? undefined : { background: "#ECECE6" }}>
+                <div key={x.title} className="ops-check">
+                  <span className={x.ok ? "ops-dot ops-dot-ok" : x.warn ? "ops-dot" : "ops-dot ops-dot-bad"} style={x.ok || !x.warn ? undefined : { background: "#ECECE6" }}>
                     <Icon name={x.ok ? "check" : x.warn ? "info" : "x"} size={14} stroke={2.4} />
                   </span>
                   <span style={{ display: "flex", flexDirection: "column", gap: 2 }}><strong style={{ fontSize: 15 }}>{x.title}</strong><span className="c-small">{x.detail}</span></span>
@@ -110,7 +110,7 @@ export default async function CheckTask({ params, searchParams }: { params: Prom
               ))}
             </section>
           </div>
-          <div className="ad-col">
+          <div className="ops-col">
             {waiting && (
               <section className="c-card">
                 <h2 className="c-h2" style={{ marginBottom: 12 }}>Your decision</h2>
@@ -125,18 +125,18 @@ export default async function CheckTask({ params, searchParams }: { params: Prom
                 <span style={{ display: "flex", flexDirection: "column" }}><strong>{creatorName}</strong>
                   <span className="c-small">{t.creator_type === "org" ? "Business" : "Person"}{c.kyc_tier ? " · NIN checked" : " · phone checked"}{c.status && c.status !== "active" ? ` · ${c.status}` : ""}</span></span>
               </div>
-              {t.creator_type === "user" && <div className="ad-kv"><span>Tier</span><span>{c.creator_tier ?? 1} · {TIER_NAMES[c.creator_tier ?? 1]}</span></div>}
-              <div className="ad-kv"><span>Past tasks</span><span>{past.length}{past.length ? ` · ${turnedDown ? `${turnedDown} turned down by Doova` : "none turned down"}` : ""}</span></div>
-              <div className="ad-kv"><span>Rejects doers&rsquo; work</span><span>{rejectedPct === null ? "No reviews yet" : `${rejectedPct}% of ${decidedSubs.length}`}</span></div>
-              {c.created_at && <div className="ad-kv"><span>Member since</span><span>{lagosDate(c.created_at, { day: "numeric", month: "long", year: "numeric" })}</span></div>}
+              {t.creator_type === "user" && <div className="ops-kv"><span>Tier</span><span>{c.creator_tier ?? 1} · {TIER_NAMES[c.creator_tier ?? 1]}</span></div>}
+              <div className="ops-kv"><span>Past tasks</span><span>{past.length}{past.length ? ` · ${turnedDown ? `${turnedDown} turned down by Doova` : "none turned down"}` : ""}</span></div>
+              <div className="ops-kv"><span>Rejects doers&rsquo; work</span><span>{rejectedPct === null ? "No reviews yet" : `${rejectedPct}% of ${decidedSubs.length}`}</span></div>
+              {c.created_at && <div className="ops-kv"><span>Member since</span><span>{lagosDate(c.created_at, { day: "numeric", month: "long", year: "numeric" })}</span></div>}
               {t.creator_type === "user" && <Link href={`/admin/users/${t.creator_id}`} style={{ display: "inline-block", marginTop: 10, color: "var(--c-ink)", fontWeight: 600 }}>Open creator&rsquo;s account</Link>}
             </section>
             <section className="c-card">
               <h2 className="c-h2" style={{ marginBottom: 6 }}>Money</h2>
-              <div className="ad-kv"><span>Rewards locked</span><span>{naira(t.escrow_kobo)}</span></div>
-              <div className="ad-kv"><span>Doova fee ({Math.round((Number(t.fee_bps ?? 1500)) / 100)}%)</span><span>{naira(fee)}</span></div>
-              <div className="ad-kv"><span>Paid from Creator funds</span><span>{naira(t.escrow_kobo + fee)}</span></div>
-              {waiting && <div className="ad-kv"><span>If turned down</span><span>{naira(t.escrow_kobo + fee)} back to them</span></div>}
+              <div className="ops-kv"><span>Rewards locked</span><span>{naira(t.escrow_kobo)}</span></div>
+              <div className="ops-kv"><span>Doova fee ({Math.round((Number(t.fee_bps ?? 1500)) / 100)}%)</span><span>{naira(fee)}</span></div>
+              <div className="ops-kv"><span>Paid from Creator funds</span><span>{naira(t.escrow_kobo + fee)}</span></div>
+              {waiting && <div className="ops-kv"><span>If turned down</span><span>{naira(t.escrow_kobo + fee)} back to them</span></div>}
             </section>
           </div>
         </div>

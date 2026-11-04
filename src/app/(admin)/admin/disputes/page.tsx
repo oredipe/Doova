@@ -27,7 +27,7 @@ export default async function Disputes({ searchParams }: { searchParams: Promise
   return (
     <>
       <Top title="Disputes" sub="Doers can appeal a rejection once. Decide within 24 hours." />
-      <div className="ad-body">
+      <div className="ops-body">
         {sp.done && <div className="c-note" role="status"><Icon name="check" size={18} /><span>{sp.done === "doer" ? "Overturned. The doer has been paid from the task's locked money." : "Rejection kept. The slot is free for another doer."} Both sides see your reason.</span></div>}
         {rows.length === 0 ? <div className="c-card"><p className="c-sub">No open appeals.</p></div> : (
           <div className="c-group">
@@ -52,8 +52,8 @@ export default async function Disputes({ searchParams }: { searchParams: Promise
         {decided.length > 0 && (
           <>
             <h2 className="c-sec">Recently decided</h2>
-            <div className="ad-table-wrap">
-              <table className="ad-table">
+            <div className="ops-table-wrap">
+              <table className="ops-table">
                 <thead><tr><th>Doer and task</th><th>Decision</th><th>Reason given</th><th>When</th></tr></thead>
                 <tbody>{decided.map((a) => (
                   <tr key={a.id}>

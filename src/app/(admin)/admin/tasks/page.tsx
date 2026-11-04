@@ -29,7 +29,7 @@ export default async function TaskApprovals({ searchParams }: { searchParams: Pr
   return (
     <>
       <Top title="Task approvals" sub="Every task is checked before it goes live (pilot). Aim for under 4 hours." />
-      <div className="ad-body">
+      <div className="ops-body">
         {sp.done && <div className="c-note" role="status"><Icon name="check" size={18} /><span>{sp.done === "approved" ? "Approved. The task is live now." : "Turned down. The creator got all their money back, fee included, with your note."}</span></div>}
         {rows.length === 0 ? (
           <div className="c-card"><p className="c-sub">Nothing waiting. Funded tasks appear here straight away.</p></div>
@@ -57,8 +57,8 @@ export default async function TaskApprovals({ searchParams }: { searchParams: Pr
         {recent.length > 0 && (
           <>
             <h2 className="c-sec">Recently decided</h2>
-            <div className="ad-table-wrap">
-              <table className="ad-table">
+            <div className="ops-table-wrap">
+              <table className="ops-table">
                 <thead><tr><th>Task</th><th>Decision</th><th>Note</th><th>When</th></tr></thead>
                 <tbody>
                   {recent.map((t) => (

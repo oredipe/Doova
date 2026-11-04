@@ -10,7 +10,7 @@ export default function AdminAuthLayout({ children }: { children: React.ReactNod
     <div className="auth">
       <header className="auth-top">
         <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-          <Logo href="/admin" /><span className="ad-badge">ADMIN</span>
+          <Logo href="/admin" /><span className="ops-badge">ADMIN</span>
         </span>
       </header>
       <main className="auth-main">

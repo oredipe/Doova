@@ -36,21 +36,21 @@ export default async function Account({ params, searchParams }: { params: Promis
   return (
     <>
       <Top title={u.full_name ?? "Account"} sub={`${u.phone} · joined ${lagosDate(u.created_at, { day: "numeric", month: "long", year: "numeric" })}`} back={{ href: "/admin/users", label: "Users" }} />
-      <div className="ad-body">
+      <div className="ops-body">
         {sp.done && <div className="c-note" role="status"><Icon name="check" size={18} /><span>{sp.done === "suspended" ? "Suspended. They can't start tasks or use the app until restored." : "Restored. They can use Doova again."}</span></div>}
         {sp.error && <p className="c-error" role="alert">{sp.error}</p>}
-        <div className="ad-two">
-          <div className="ad-col">
+        <div className="ops-two">
+          <div className="ops-col">
             <section className="c-card">
               <h2 className="c-h2" style={{ marginBottom: 6 }}>Tasks they did</h2>
               {subRows.length === 0 ? <p className="c-sub">None yet.</p> : subRows.map((s) => (
-                <div key={s.id} className="ad-kv"><span>{s.tasks?.title}</span><span>{SUB[s.status] ?? s.status} · {naira(s.tasks?.reward_kobo ?? 0)}</span></div>
+                <div key={s.id} className="ops-kv"><span>{s.tasks?.title}</span><span>{SUB[s.status] ?? s.status} · {naira(s.tasks?.reward_kobo ?? 0)}</span></div>
               ))}
             </section>
             <section className="c-card">
               <h2 className="c-h2" style={{ marginBottom: 6 }}>Tasks they posted</h2>
               {(tasks.data ?? []).length === 0 ? <p className="c-sub">None yet.</p> : (tasks.data ?? []).map((t) => (
-                <div key={t.id} className="ad-kv"><span>{can(me.role, "task.moderate") ? <Link href={`/admin/tasks/${t.id}`} style={{ color: "var(--c-ink)" }}>{t.title}</Link> : t.title}</span>
+                <div key={t.id} className="ops-kv"><span>{can(me.role, "task.moderate") ? <Link href={`/admin/tasks/${t.id}`} style={{ color: "var(--c-ink)" }}>{t.title}</Link> : t.title}</span>
                   <span>{TASK_STATUS[t.status]?.label ?? t.status} · {t.slots} × {naira(t.reward_kobo)}</span></div>
               ))}
             </section>
@@ -58,23 +58,23 @@ export default async function Account({ params, searchParams }: { params: Promis
               <section className="c-card">
                 <h2 className="c-h2" style={{ marginBottom: 6 }}>Staff actions on this account</h2>
                 {(log.data ?? []).map((l, i) => (
-                  <div key={i} className="ad-kv"><span>{l.action.replace(".", " ")} by {(l.users as unknown as { full_name: string } | null)?.full_name}{(l.detail as { note?: string })?.note ? `: “${(l.detail as { note?: string }).note}”` : ""}</span><span className="c-small">{lagosDate(l.created_at)}</span></div>
+                  <div key={i} className="ops-kv"><span>{l.action.replace(".", " ")} by {(l.users as unknown as { full_name: string } | null)?.full_name}{(l.detail as { note?: string })?.note ? `: “${(l.detail as { note?: string }).note}”` : ""}</span><span className="c-small">{lagosDate(l.created_at)}</span></div>
                 ))}
               </section>
             )}
           </div>
-          <div className="ad-col">
+          <div className="ops-col">
             <section className="c-card">
               <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 6 }}>
                 <span className="c-ico" style={{ background: "var(--c-paid-soft)", fontWeight: 700, fontSize: 13 }}>{initialsOf(u.full_name)}</span>
                 <span style={{ display: "flex", flexDirection: "column" }}><strong>{u.full_name}</strong>
                   <span className="c-small">{suspended ? "Suspended" : u.status === "deleted" ? "Closed" : "Active"}{u.is_flagged ? " · flagged" : ""}{staff.data?.active ? ` · Doova ${ROLE_NAMES[staff.data.role as StaffRole]}` : ""}</span></span>
               </div>
-              <div className="ad-kv"><span>Doer level</span><span>{u.level} · {LEVEL_NAMES[u.level]} · {u.xp} XP</span></div>
-              <div className="ad-kv"><span>Creator tier</span><span>{u.creator_tier} · {TIER_NAMES[u.creator_tier]}</span></div>
-              <div className="ad-kv"><span>Checked</span><span>{u.kyc_tier ? "NIN" : "Phone only"}</span></div>
-              <div className="ad-kv"><span>Earnings</span><span>{naira(bal.earnings ?? 0)}</span></div>
-              <div className="ad-kv"><span>Creator funds</span><span>{naira(bal.funds ?? 0)}</span></div>
+              <div className="ops-kv"><span>Doer level</span><span>{u.level} · {LEVEL_NAMES[u.level]} · {u.xp} XP</span></div>
+              <div className="ops-kv"><span>Creator tier</span><span>{u.creator_tier} · {TIER_NAMES[u.creator_tier]}</span></div>
+              <div className="ops-kv"><span>Checked</span><span>{u.kyc_tier ? "NIN" : "Phone only"}</span></div>
+              <div className="ops-kv"><span>Earnings</span><span>{naira(bal.earnings ?? 0)}</span></div>
+              <div className="ops-kv"><span>Creator funds</span><span>{naira(bal.funds ?? 0)}</span></div>
             </section>
             {can(me.role, "user.suspend") && u.status !== "deleted" && u.id !== me.id && (
               <section className="c-card">

@@ -43,7 +43,7 @@ export default async function MoneyCheck({ searchParams }: { searchParams: Promi
   return (
     <>
       <Top title="Money check" sub="Every morning, the money in our records is checked against the partner statements" />
-      <div className="ad-body">
+      <div className="ops-body">
         {sp.done && <div className={sp.done === "different" ? "c-error" : "c-note"} role="status">{sp.done !== "different" && <Icon name="check" size={18} />}<span>{DONE[sp.done]}</span></div>}
         {sp.error && <p className="c-error" role="alert">{sp.error}</p>}
         {paused.data?.value === true && sp.done !== "different" && <p className="c-error">Withdrawals are paused until a difference is explained and an owner switches them back on in <Link href="/admin/settings">Settings</Link>.</p>}
@@ -67,20 +67,20 @@ export default async function MoneyCheck({ searchParams }: { searchParams: Promi
           </div>
         </section>
 
-        <div className="ad-two">
-          <div className="ad-col">
+        <div className="ops-two">
+          <div className="ops-col">
             <section className="c-card">
               <h2 className="c-h2" style={{ marginBottom: 6 }}>Where users&rsquo; money sits</h2>
-              <div className="ad-kv"><span>Creator funds (people)</span><span>{naira(v("creator_funds"))}</span></div>
-              {v("business_funds") > 0 && <div className="ad-kv"><span>Business funds</span><span>{naira(v("business_funds"))}</span></div>}
-              <div className="ad-kv"><span>Locked in tasks</span><span>{naira(v("task_escrow"))}</span></div>
-              <div className="ad-kv"><span>Doers&rsquo; Earnings</span><span>{naira(v("earnings"))}</span></div>
-              <div className="ad-kv"><span>Withdrawals on the way</span><span>{naira(v("payouts_in_flight"))}</span></div>
-              <div className="ad-kv"><span style={{ color: "var(--c-ink)", fontWeight: 600 }}>Total owed to users</span><span>{naira(owed)}</span></div>
+              <div className="ops-kv"><span>Creator funds (people)</span><span>{naira(v("creator_funds"))}</span></div>
+              {v("business_funds") > 0 && <div className="ops-kv"><span>Business funds</span><span>{naira(v("business_funds"))}</span></div>}
+              <div className="ops-kv"><span>Locked in tasks</span><span>{naira(v("task_escrow"))}</span></div>
+              <div className="ops-kv"><span>Doers&rsquo; Earnings</span><span>{naira(v("earnings"))}</span></div>
+              <div className="ops-kv"><span>Withdrawals on the way</span><span>{naira(v("payouts_in_flight"))}</span></div>
+              <div className="ops-kv"><span style={{ color: "var(--c-ink)", fontWeight: 600 }}>Total owed to users</span><span>{naira(owed)}</span></div>
               <p className="c-small" style={{ marginTop: 10 }}>This money belongs to users. It never pays Doova&rsquo;s bills. If our records and a statement ever differ, withdrawals pause until the difference is explained.</p>
             </section>
           </div>
-          <div className="ad-col">
+          <div className="ops-col">
             {can(me.role, "reconcile") && (
               <section className="c-card">
                 <h2 className="c-h2" style={{ marginBottom: 6 }}>Record today&rsquo;s statement</h2>
@@ -102,9 +102,9 @@ export default async function MoneyCheck({ searchParams }: { searchParams: Promi
             )}
             <section className="c-card">
               <h2 className="c-h2" style={{ marginBottom: 6 }}>Doova&rsquo;s own money</h2>
-              <div className="ad-kv"><span>Fees earned</span><span>{naira(v("platform_revenue"))}</span></div>
-              <div className="ad-kv"><span>Partner fees we paid</span><span>{v("processor_fees") ? "−" : ""}{naira(v("processor_fees"))}</span></div>
-              <div className="ad-kv"><span style={{ color: "var(--c-ink)", fontWeight: 600 }}>Not yet moved to Doova&rsquo;s account</span><span>{naira(doovaNet)}</span></div>
+              <div className="ops-kv"><span>Fees earned</span><span>{naira(v("platform_revenue"))}</span></div>
+              <div className="ops-kv"><span>Partner fees we paid</span><span>{v("processor_fees") ? "−" : ""}{naira(v("processor_fees"))}</span></div>
+              <div className="ops-kv"><span style={{ color: "var(--c-ink)", fontWeight: 600 }}>Not yet moved to Doova&rsquo;s account</span><span>{naira(doovaNet)}</span></div>
               <p className="c-small" style={{ marginTop: 10 }}>Moving fees to Doova&rsquo;s own account arrives with the Paystack connection. Only final fees can move, never money still locked.</p>
             </section>
           </div>
@@ -112,8 +112,8 @@ export default async function MoneyCheck({ searchParams }: { searchParams: Promi
 
         <h2 className="c-sec">Daily checks</h2>
         {rows.length === 0 ? <div className="c-card"><p className="c-sub">No checks yet. Record the first statement above once Paystack is connected.</p></div> : (
-          <div className="ad-table-wrap">
-            <table className="ad-table">
+          <div className="ops-table-wrap">
+            <table className="ops-table">
               <thead><tr><th>Day</th><th>Partner</th><th>Our records</th><th>Statement</th><th>Difference</th><th>Result</th></tr></thead>
               <tbody>{rows.map((r) => (
                 <tr key={r.id}>

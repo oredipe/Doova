@@ -11,7 +11,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <Logo />
         <Link href="/" className="c-small" style={{ color: "var(--c-ink)" }}>Back to doova.ng</Link>
       </header>
-      <main className="auth-main">{supabaseConfigured() ? <Suspense>{children}</Suspense> : <SetupNeeded />}</main>
+      {supabaseConfigured() ? <Suspense>{children}</Suspense> : <main className="auth-main"><SetupNeeded /></main>}
     </div>
   );
 }

@@ -1,0 +1,203 @@
+/* doova.ng website styles, exported from the design canvas (4 Nov). Scoped to .ws. */
+/* Doova website: one set of pages, responsive by container width (phone first, laptop from 900px) */
+.ws { container-type: inline-size; box-sizing: border-box; font-family: var(--font-archivo), system-ui, sans-serif; color: #111111; background: #F6F6F1; -webkit-font-smoothing: antialiased; }
+.ws *, .ws *::before, .ws *::after { box-sizing: border-box; }
+.ws img { display: block; max-width: 100%; }
+.ws a { color: inherit; }
+.ws .wrap { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+.ws .sec { padding: 64px 0; }
+.ws .eyebrow { font-size: 13px; font-weight: 650; letter-spacing: 0.02em; color: #4B32C3; margin: 0 0 12px; }
+.ws .h-hero { font-size: 44px; line-height: 0.95; letter-spacing: -0.04em; font-weight: 700; margin: 0; }
+.ws .h2 { font-size: 32px; line-height: 1.08; letter-spacing: -0.03em; font-weight: 700; margin: 0; }
+.ws .h3 { font-size: 20px; line-height: 1.25; letter-spacing: -0.015em; font-weight: 650; margin: 0; }
+.ws .lead { font-size: 18px; line-height: 1.55; color: #3A3A35; margin: 0; }
+.ws .body { font-size: 16px; line-height: 1.6; color: #3A3A35; margin: 0; }
+.ws .small { font-size: 14px; line-height: 1.5; color: #6B6A64; margin: 0; }
+.ws .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 0 24px; border-radius: 999px; font: inherit; font-size: 16px; font-weight: 650; text-decoration: none; border: 0; cursor: pointer; white-space: nowrap; }
+.ws .btn-dark { background: #111111; color: #FFFFFF; }
+.ws .btn-lime { background: #C6F24E; color: #111111; }
+.ws .btn-line { background: transparent; color: #111111; box-shadow: inset 0 0 0 1.5px rgba(17,17,17,0.2); }
+.ws .btn-white { background: #FFFFFF; color: #111111; }
+.ws .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.ws .stack { display: flex; flex-direction: column; }
+.ws .card { background: #FFFFFF; border-radius: 24px; padding: 24px; }
+.ws .dark { background: #111111; color: #FFFFFF; }
+.ws .dark .body, .ws .dark .lead { color: #D3D3CD; }
+.ws .dark .small { color: #A5A5A0; }
+.ws .pill { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 650; }
+.ws .pill-lime { background: #C6F24E; color: #111; }
+.ws .pill-violet { background: #ECE8FD; color: #4B32C3; }
+.ws .pill-soft { background: #ECEBE7; color: #111; }
+.ws .tick { width: 22px; height: 22px; border-radius: 999px; background: #C6F24E; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+
+/* grids */
+.ws .g2, .ws .g3, .ws .g4 { display: grid; gap: 16px; grid-template-columns: 1fr; }
+.ws .split { display: grid; gap: 40px; grid-template-columns: 1fr; align-items: center; }
+
+/* nav */
+/* fixed header: clear at the top of the page, fills with frosted glass as you scroll */
+.ws .nav { position: sticky; top: 0; z-index: 20; background: rgba(246,246,241,0.82); border-bottom: 1px solid rgba(17,17,17,0.08); -webkit-backdrop-filter: blur(14px) saturate(1.4); backdrop-filter: blur(14px) saturate(1.4); }
+@supports (animation-timeline: scroll()) {
+  .ws .nav { animation: ws-nav-fill linear both; animation-timeline: scroll(root block); animation-range: 0 140px; }
+}
+@keyframes ws-nav-fill {
+  from { background-color: rgba(246,246,241,0); border-bottom-color: rgba(17,17,17,0); box-shadow: 0 0 0 rgba(17,17,17,0); -webkit-backdrop-filter: blur(0) saturate(1); backdrop-filter: blur(0) saturate(1); }
+  to { background-color: rgba(246,246,241,0.78); border-bottom-color: rgba(17,17,17,0.08); box-shadow: 0 10px 30px -18px rgba(17,17,17,0.35); -webkit-backdrop-filter: blur(14px) saturate(1.4); backdrop-filter: blur(14px) saturate(1.4); }
+}
+@media (prefers-reduced-motion: reduce) { .ws .nav { animation: none; } }
+.ws .nav-in { height: 68px; display: flex; align-items: center; gap: 12px; }
+.ws .nav-links { display: none; }
+.ws .nav-link { font-size: 15px; text-decoration: none; color: #3A3A35; padding: 8px 2px; }
+.ws .nav-link[aria-current="page"] { color: #111; font-weight: 650; box-shadow: inset 0 -2px 0 #111; }
+.ws .menu { position: relative; }
+.ws .menu > summary { list-style: none; width: 44px; height: 44px; border-radius: 999px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: inset 0 0 0 1.5px rgba(17,17,17,0.15); }
+.ws .menu > summary::-webkit-details-marker { display: none; }
+.ws .menu-panel { position: absolute; right: 0; top: 54px; width: 260px; background: #FFF; border-radius: 20px; padding: 10px; box-shadow: 0 16px 40px rgba(17,17,17,0.16); display: flex; flex-direction: column; }
+.ws .menu-panel a { padding: 12px 14px; border-radius: 12px; font-size: 16px; text-decoration: none; }
+.ws .nav-signin { display: none; }
+
+/* device frames and photos */
+.ws .phone { position: relative; display: flow-root; width: 260px; padding: 0; border-radius: 16% / 7.6%; background: #0B0B0B; box-shadow: inset 0 0 0 1.5px #55555A, inset 0 0 0 4px #1A1A1A, 0 30px 60px -20px rgba(17,17,17,0.45); }
+/* flow-root stops the img margin collapsing out of the frame (it lost its top and bottom bezel when the phone sat inside a plain block) */
+/* bezel as img margin: a % margin is measured from the phone's own width, so the bezel stays thin at any size */
+.ws .phone img { width: 93%; margin: 3.5%; aspect-ratio: 390 / 844; object-fit: cover; object-position: top; border-radius: 12.6% / 5.8%; }
+.ws .phone::before, .ws .phone::after { content: ""; position: absolute; width: 3px; background: #3A3A3E; }
+.ws .phone::before { right: -2px; top: 26%; height: 11%; border-radius: 0 2px 2px 0; }
+.ws .phone::after { left: -2px; top: 20%; height: 15%; border-radius: 2px 0 0 2px; }
+/* laptop: black bezel, 16:10 screen, silver base */
+.ws .laptop { position: relative; background: #0B0B0B; border-radius: 3% / 4.6%; padding: 2.4% 2.4% 3.2%; box-shadow: 0 0 0 2px #C8C8CD, inset 0 0 0 1px #2A2A2A, 0 30px 60px -24px rgba(17,17,17,0.45); }
+.ws .laptop::before { content: ""; position: absolute; top: 1%; left: 50%; width: 6px; height: 6px; margin-left: -3px; border-radius: 999px; background: #26262A; }
+.ws .laptop img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; object-position: top left; border-radius: 0.5%; }
+.ws .laptop-base { position: relative; margin: 0 -4%; aspect-ratio: 100 / 3.2; background: linear-gradient(#E4E4E8 0%, #C4C4CA 55%, #8E8E95 100%); border-radius: 2px 2px 40% 40% / 2px 2px 100% 100%; }
+.ws .laptop-base::before { content: ""; position: absolute; left: 43%; width: 14%; top: 0; height: 38%; background: #A9A9B0; border-radius: 0 0 8px 8px; }
+.ws .photo { position: relative; overflow: hidden; border-radius: 28px; background: linear-gradient(155deg, #E3D6C3 0%, #C9B395 45%, #8E7759 100%); }
+.ws .photo-cap { position: absolute; left: 16px; top: 16px; right: 16px; font-size: 12px; line-height: 1.4; color: rgba(17,17,17,0.62); }
+.ws .photo-cap b { display: inline-block; background: rgba(255,255,255,0.7); padding: 2px 8px; border-radius: 6px; margin-bottom: 6px; color: #111; font-weight: 650; }
+.ws .toast { display: flex; align-items: center; gap: 12px; background: #FFFFFF; border-radius: 18px; padding: 12px 16px 12px 12px; box-shadow: 0 18px 40px -12px rgba(17,17,17,0.35); }
+.ws .toast-coin { width: 40px; height: 40px; border-radius: 12px; background: #C6F24E; display: flex; align-items: center; justify-content: center; font-weight: 800; flex: none; }
+
+/* compare */
+.ws .cmp { display: grid; grid-template-columns: 1fr; border-radius: 24px; overflow: hidden; background: #FFFFFF; }
+.ws .cmp-row { display: grid; grid-template-columns: 1fr; gap: 10px; padding: 20px; border-top: 1px solid rgba(17,17,17,0.08); }
+.ws .cmp-row:first-child { border-top: 0; }
+.ws .cmp-old { font-size: 15px; line-height: 1.45; color: #6B6A64; display: flex; gap: 10px; }
+.ws .cmp-new { font-size: 16px; line-height: 1.45; display: flex; gap: 10px; }
+.ws .cmp-head { display: none; }
+
+/* forms */
+.ws .field label { display: block; font-size: 14px; font-weight: 650; margin-bottom: 6px; }
+.ws .input { width: 100%; min-height: 54px; padding: 0 16px; border-radius: 14px; border: 1px solid #8A8982; background: #FFF; font: inherit; font-size: 16px; color: #111; }
+.ws .choice { display: flex; gap: 12px; align-items: flex-start; width: 100%; padding: 18px; border-radius: 18px; background: #FFF; border: 2px solid transparent; text-align: left; font: inherit; color: #111; cursor: pointer; }
+.ws .choice[aria-checked="true"] { border-color: #111; }
+.ws .dot { width: 22px; height: 22px; border-radius: 999px; border: 2px solid #8A8982; flex: none; margin-top: 1px; }
+.ws .choice[aria-checked="true"] .dot { border: 7px solid #111; }
+.ws details.faq { border-top: 1px solid rgba(17,17,17,0.1); padding: 18px 0; }
+.ws details.faq summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; gap: 16px; font-size: 18px; font-weight: 650; }
+.ws details.faq summary::-webkit-details-marker { display: none; }
+.ws details.faq p { margin: 12px 0 0; font-size: 16px; line-height: 1.6; color: #3A3A35; max-width: 760px; }
+
+/* footer */
+.ws .foot { background: #111; color: #D3D3CD; padding: 56px 0 32px; }
+.ws .foot a { text-decoration: none; color: #D3D3CD; font-size: 15px; }
+.ws .foot-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.ws .foot-brand { grid-column: 1 / -1; }
+
+@container (max-width: 899px) { .ws .only-d { display: none !important; } }
+.ws .tabs { display: inline-flex; padding: 5px; border-radius: 999px; background: #ECEBE7; gap: 4px; }
+.ws .tab { min-height: 42px; padding: 0 18px; border-radius: 999px; border: 0; background: transparent; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; color: #3A3A35; }
+.ws .tab[aria-pressed="true"] { background: #111; color: #FFF; }
+
+@container (min-width: 900px) {
+  .ws .wrap { padding: 0 40px; }
+  .ws .sec { padding: 112px 0; }
+  .ws .h-hero { font-size: 80px; }
+  .ws .h2 { font-size: 52px; }
+  .ws .h3 { font-size: 22px; }
+  .ws .lead { font-size: 21px; }
+  .ws .g2 { grid-template-columns: 1fr 1fr; gap: 24px; }
+  .ws .g3 { grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .ws .g4 { grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .ws .split { grid-template-columns: 1fr 1fr; gap: 72px; }
+  .ws .split.wide-r { grid-template-columns: 0.9fr 1.1fr; }
+  .ws .nav-in { height: 80px; gap: 28px; }
+  .ws .nav-links { display: flex; gap: 28px; margin-left: 24px; }
+  .ws .nav-signin { display: inline-flex; }
+  .ws .menu { display: none; }
+  .ws .phone { width: 300px; }
+  .ws .card { padding: 32px; border-radius: 28px; }
+  .ws .cmp-head { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; padding: 20px 32px; background: #ECEBE7; font-size: 14px; font-weight: 650; }
+  .ws .cmp-row { grid-template-columns: 1fr 1fr; gap: 32px; padding: 24px 32px; }
+  .ws .foot-cols { grid-template-columns: 2fr 1fr 1fr 1fr; }
+  .ws .foot-brand { grid-column: auto; }
+  .ws .only-m { display: none !important; }
+}
+
+.ws .tab-chip { background: #F0EFEA; }
+.ws .tab-chip[aria-pressed="true"] { background: #111111; color: #FFFFFF; }
+
+/* bento: why Doova */
+.ws .bento { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.ws .bento-tile { display: flex; flex-direction: column; gap: 22px; justify-content: space-between; background: #ECEBE7; }
+.ws .bento-tile.dark { background: #111111; }
+.ws .bento-vis { margin-top: auto; }
+@container (min-width: 900px) { .ws .bento { grid-template-columns: repeat(3, 1fr); gap: 20px; } .ws .bento .span2 { grid-column: span 2; } }
+
+.ws .paid-notes { position: absolute; left: 12px; right: 12px; bottom: 12px; }
+@container (min-width: 900px) { .ws .paid-notes { left: 16px; right: auto; bottom: 16px; width: 320px; } }
+
+/* hero media: full-bleed photo on phones, inset with overlapping phone on laptops */
+.ws .hero-media { position: relative; margin: 0 -20px 64px; }
+.ws .hero-photo { width: 100%; height: 460px; border-radius: 0; overflow: hidden; }
+.ws .hero-photo.full { height: 420px; }
+.ws .hero-phone { position: absolute; left: 20px; bottom: -64px; width: 124px; }
+.ws .hero-media:has(.full) { margin-bottom: 0; }
+@container (min-width: 900px) {
+  .ws .hero-media { margin: 0; min-height: 560px; }
+  .ws .hero-photo { width: 82%; margin-left: auto; height: 560px; border-radius: 28px; }
+  .ws .hero-photo.w86 { width: 86%; height: 520px; }
+  .ws .hero-photo.full { width: 100%; height: clamp(360px, 40cqi, 520px); }
+  .ws .hero-media:has(.full) { min-height: 0; }
+  .ws .hero-phone { left: 0; bottom: -40px; width: min(220px, 44%); }
+}
+
+/* founder */
+.ws .founder { display: grid; grid-template-columns: 1fr; gap: 24px; align-items: center; }
+.ws .founder-avatar { width: 120px; height: 120px; border-radius: 999px; background: linear-gradient(155deg, #E3D6C3 0%, #C9B395 45%, #8E7759 100%); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 650; color: rgba(17,17,17,0.6); }
+@container (min-width: 900px) { .ws .founder { grid-template-columns: 200px 1fr; gap: 48px; padding: 48px; } .ws .founder-avatar { width: 200px; height: 200px; } }
+@container (min-width: 900px) { .ws .hero-photo.w86 { width: 88%; } .ws .hero-photo.w86 img { object-position: 33% 40% !important; } .ws .hero-photo.w86 + .hero-phone { width: 200px; bottom: -70px; } }
+.ws .hero-media.solo { margin-bottom: 0; }
+@container (min-width: 900px) { .ws .hero-media.solo { min-height: 0; } .ws .hero-media.solo .hero-photo.w86 { width: 100%; height: 560px; } .ws .hero-media.solo .hero-photo.w86 img { object-position: 8% 45% !important; } }
+
+/* device peeking out of the bottom of a card */
+.ws .peek { margin-top: 8px; height: 300px; overflow: hidden; display: flex; justify-content: center; align-items: flex-start; gap: 16px; }
+.ws .peek-lap { margin-top: 8px; height: 300px; overflow: hidden; }
+.ws .dark .phone { box-shadow: inset 0 0 0 1.5px #6A6A70, inset 0 0 0 4px #1A1A1A, 0 0 0 1px rgba(255,255,255,0.08); }
+.ws .dark .laptop { box-shadow: 0 0 0 2px #C8C8CD, inset 0 0 0 1px #2A2A2A; }
+.ws .showcase { border-radius: 24px; background: linear-gradient(160deg, #6B4EE6 0%, #4B32C3 100%); padding: 28px 20px 0; overflow: hidden; }
+@container (min-width: 900px) { .ws .showcase { padding: 48px 40px 0; border-radius: 28px; } }
+@container (min-width: 900px) { .ws .laptop-base { margin: 0 -7%; } }
+
+/* fuller cards (4 Nov): CTA artwork, small CTAs, help card */
+.ws .cta-in { display: grid; grid-template-columns: 1fr; gap: 36px; align-items: center; }
+@container (min-width: 900px) { .ws .cta-in { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); } }
+.ws .cta-art { position: relative; height: 290px; }
+@container (min-width: 900px) { .ws .cta-art { height: 300px; } }
+.ws .cta-card { position: absolute; background: #FFFFFF; color: #111111; border-radius: 18px; padding: 14px 16px; box-shadow: 0 20px 44px -18px rgba(0,0,0,0.65); display: flex; gap: 12px; align-items: center; font-size: 14px; line-height: 1.35; }
+.ws .cta-card b { font-size: 16px; display: block; }
+.ws .cta-card > span:last-child { white-space: nowrap; }
+.ws .cta-ico { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex: none; }
+.ws .btn-sm { min-height: 44px; padding: 0 18px; font-size: 15px; }
+.ws .tile-link { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 650; text-decoration: none; }
+.ws .help-card { display: flex; flex-direction: column; gap: 12px; max-width: 420px; }
+.ws .tl { display: flex; flex-direction: column; gap: 0; margin-top: 8px; }
+.ws .tl-step { display: grid; grid-template-columns: 22px 1fr; gap: 14px; padding-bottom: 20px; position: relative; }
+.ws .tl-step::before { content: ""; position: absolute; left: 10px; top: 22px; bottom: 0; width: 2px; background: #ECEBE7; }
+.ws .tl-step:last-child::before { display: none; }
+.ws .tl-dot { width: 22px; height: 22px; border-radius: 999px; border: 2px solid #6B4EE6; background: #FFFFFF; }
+.ws .tl-step.on .tl-dot { background: #6B4EE6; }
+
+/* doodle layer (4 Nov): hand-drawn ink lines with lime and violet spots, decorative only */
+.ws .dd { position: absolute; pointer-events: none; overflow: visible; }
+.ws .dd-wrap { position: relative; display: inline-block; z-index: 0; white-space: nowrap; }
+.ws .dd-wrap > .dd-under { z-index: -1; }
+.ws { overflow-x: clip; }

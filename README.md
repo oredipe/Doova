@@ -45,6 +45,12 @@ cp .env.example .env.local   # fill in the Supabase values
 npm run dev                  # http://localhost:3000
 ```
 
+### Website pages
+`/`, `/doers`, `/creators` and `/about` are the doova.ng pages from the design canvas. Their HTML lives in
+`src/site/*.ts` (generated from the canvas, so edit the design and re-export rather than editing by hand),
+styled by `src/app/(site)/website.css`. Photos and screen mockups are in `public/site/` as WebP. The cost
+calculator on For creators is a React component (`src/app/(site)/creators/CostCalculator.tsx`).
+
 ### Database rules every developer must follow
 - All money is **integer kobo** (₦1 = 100 kobo). Never floats.
 - The app never updates balances, money columns or task/submission statuses directly. It calls the

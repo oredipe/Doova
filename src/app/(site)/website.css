@@ -201,3 +201,56 @@
 .ws .dd-wrap { position: relative; display: inline-block; z-index: 0; white-space: nowrap; }
 .ws .dd-wrap > .dd-under { z-index: -1; }
 .ws { overflow-x: clip; }
+
+/* ---------- motion (6 Nov) ----------
+   Hero: eases in on load (CSS only). Below the fold: blocks rise in as they scroll into view
+   (SiteMotion adds .motion, [data-rv] and .rv-in). Line doodles draw themselves; coins wobble,
+   sparks twinkle, phones float, little cards pop. Uses translate/scale (not transform), so inline
+   rotations in the designs are kept. Nothing moves with reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes ws-rise { from { opacity: 0; translate: 0 22px; } to { opacity: 1; translate: 0 0; } }
+  @keyframes ws-fade-up { from { opacity: 0; translate: 0 36px; scale: 0.985; } to { opacity: 1; translate: 0 0; scale: 1; } }
+  @keyframes ws-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+  @keyframes ws-pop { 0% { opacity: 0; scale: 0.82; translate: 0 14px; } 70% { opacity: 1; scale: 1.03; } 100% { opacity: 1; scale: 1; translate: 0 0; } }
+  @keyframes ws-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -8px; } }
+  @keyframes ws-wobble { 0%, 100% { rotate: 0deg; } 25% { rotate: -6deg; } 75% { rotate: 5deg; } }
+  @keyframes ws-twinkle { 0%, 100% { opacity: 1; scale: 1; } 50% { opacity: 0.55; scale: 0.86; } }
+  @keyframes ws-blob { from { opacity: 0; scale: 0.9; } to { opacity: 1; scale: 1; } }
+
+  /* hero entrance */
+  .ws .nav + .sec > .wrap > .stack:first-child > * { animation: ws-rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  .ws .nav + .sec > .wrap > .stack:first-child > :nth-child(2) { animation-delay: 0.08s; }
+  .ws .nav + .sec > .wrap > .stack:first-child > :nth-child(3) { animation-delay: 0.16s; }
+  .ws .nav + .sec > .wrap > .stack:first-child > :nth-child(4) { animation-delay: 0.24s; }
+  .ws .nav + .sec > .wrap > .stack:first-child > :nth-child(n+5) { animation-delay: 0.32s; }
+  .ws .nav + .sec > .wrap > :nth-child(2) { animation: ws-fade-up 1s cubic-bezier(0.2, 0.7, 0.2, 1) 0.2s both; }
+  .ws .nav + .sec .dd-squig path, .ws .nav + .sec .dd-under path, .ws .nav + .sec .dd-arrow path, .ws .nav + .sec .dd-loop path {
+    stroke-dasharray: 1; animation: ws-draw 0.9s ease-out 0.75s both; }
+  .ws .nav + .sec .dd-blob { animation: ws-blob 1.2s ease-out 0.15s both; }
+  .ws .nav + .sec .toast, .ws .nav + .sec .hero-phone { animation: ws-pop 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) 0.65s both; }
+
+  /* scroll reveal */
+  .ws.motion [data-rv] { opacity: 0; translate: 0 28px; transition: opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) var(--rv-d, 0ms), translate 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) var(--rv-d, 0ms); }
+  .ws.motion [data-rv].rv-in { opacity: 1; translate: 0 0; }
+  .ws.motion .dd-draw path { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1s ease-out 0.25s; }
+  .ws.motion .dd-draw.rv-in path { stroke-dashoffset: 0; }
+  .ws.motion [data-rv] .cta-card { opacity: 0; }
+  .ws.motion [data-rv].rv-in .cta-card { animation: ws-pop 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  .ws.motion [data-rv].rv-in .cta-card:nth-child(1) { animation-delay: 0.25s; }
+  .ws.motion [data-rv].rv-in .cta-card:nth-child(2) { animation-delay: 0.45s; }
+  .ws.motion [data-rv].rv-in .cta-card:nth-child(3) { animation-delay: 0.65s; }
+
+  /* always-on, gentle */
+  .ws .dd-coin { animation: ws-wobble 5s ease-in-out infinite; transform-origin: 65% 50%; }
+  .ws .dd-spark { animation: ws-twinkle 3.2s ease-in-out infinite; }
+  .ws .dd-spark:nth-of-type(2n) { animation-delay: 1.4s; }
+  .ws .split .phone > img, .ws .hero-media .phone > img { will-change: auto; }
+  .ws .split > div > .phone, .ws .split > div > div > .phone { animation: ws-float 6s ease-in-out infinite; }
+  .ws .split > div > div > .phone { animation-delay: -3s; }
+
+  /* hover */
+  .ws a.card, .ws .bento-tile { transition: translate 0.25s ease, box-shadow 0.25s ease; }
+  .ws a.card:hover, .ws .bento-tile:hover { translate: 0 -4px; box-shadow: 0 18px 40px -22px rgba(17, 17, 17, 0.35); }
+  .ws .btn { transition: scale 0.15s ease, background-color 0.2s ease, box-shadow 0.2s ease; }
+  .ws .btn:active { scale: 0.97; }
+}

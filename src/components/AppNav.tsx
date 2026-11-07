@@ -26,7 +26,7 @@ function isCurrent(path: string, href: string) {
   return path === href || path.startsWith(href + "/");
 }
 
-export function AppNav({ initials }: { initials: string }) {
+export function AppNav({ initials, unread = 0 }: { initials: string; unread?: number }) {
   const path = usePathname();
   const creating = path === "/create" || path.startsWith("/create/");
   const links = creating ? CREATE : EARN;
@@ -46,6 +46,16 @@ export function AppNav({ initials }: { initials: string }) {
           <span style={{ flex: 1 }} />
           <Link href={creating ? "/tasks" : "/create"} className="c-small shell-switch" style={{ color: "var(--c-ink)", fontWeight: 600 }}>
             {creating ? "Switch to Earn" : "Switch to Create"}
+          </Link>
+          <Link href="/notifications" className="c-ic-btn" aria-label={unread ? `Notifications, ${unread} new` : "Notifications"}
+            aria-current={path === "/notifications" ? "page" : undefined} style={{ position: "relative", textDecoration: "none", color: "var(--c-ink)" }}>
+            <Icon name="bell" size={20} />
+            {unread > 0 && path !== "/notifications" && (
+              <span aria-hidden="true" style={{ position: "absolute", top: -2, right: -2, minWidth: 18, height: 18, padding: "0 5px", borderRadius: 999,
+                background: "var(--c-violet)", color: "#FFF", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {unread > 9 ? "9+" : unread}
+              </span>
+            )}
           </Link>
           <Link href={creating ? "/create/settings" : "/settings"} aria-label="Your account"
             style={{ width: 40, height: 40, borderRadius: 999, background: "var(--c-paid-soft)", display: "flex",

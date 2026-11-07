@@ -3,11 +3,20 @@ import { Icon } from "@/components/Icon";
 import { requireProfile } from "@/lib/profile";
 import { TIER_NAMES } from "@/lib/tasks";
 import { signOut } from "@/app/(auth)/actions";
+import { setNewTaskAlerts } from "@/app/notificationActions";
+import { PushToggle } from "@/components/PushToggle";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { vapidKeys } from "@/lib/push";
 
 /** Settings, shared by Earn and Create. Creators also see their tier. */
 export async function SettingsView({ mode }: { mode: "earn" | "create" }) {
   const me = await requireProfile();
   const local = me.phone.replace(/^\+234/, "0");
+  const [keys, { data: prefs }] = await Promise.all([
+    vapidKeys().catch(() => null),
+    createAdminClient().from("users").select("notify_new_tasks").eq("id", me.id).maybeSingle(),
+  ]);
+  const alerts = prefs?.notify_new_tasks !== false;
   return (
     <>
       <h1 className="c-title">Settings</h1>
@@ -50,6 +59,18 @@ export async function SettingsView({ mode }: { mode: "earn" | "create" }) {
           <Icon name="chev" size={16} />
         </Link>
       </div>
+      <h2 className="c-sec">Notifications</h2>
+      <section className="c-card" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        {keys && <PushToggle publicKey={keys.publicKey} />}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "space-between", flexWrap: "wrap", borderTop: keys ? "1px solid var(--c-line)" : undefined, paddingTop: keys ? 16 : 0 }}>
+          <span style={{ display: "flex", flexDirection: "column", gap: 2, flex: "1 1 220px" }}>
+            <strong style={{ fontSize: 15 }}>New task alerts: {alerts ? "on" : "off"}</strong>
+            <span className="c-small">A heads-up when a task you can do goes live. Several close together come as one.</span>
+          </span>
+          <form action={setNewTaskAlerts.bind(null, !alerts)}><button className="c-btn c-btn-quiet" style={{ minHeight: 40 }}>{alerts ? "Turn off" : "Turn on"}</button></form>
+        </div>
+        <span className="c-small">Payments, reviews and anything about your money always show in the bell.</span>
+      </section>
       <form action={signOut}>
         <button className="c-btn c-btn-quiet c-btn-block"><Icon name="out" size={18} /> Sign out</button>
       </form>

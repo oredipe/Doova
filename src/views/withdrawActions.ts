@@ -6,10 +6,12 @@ import { requireProfile } from "@/lib/profile";
 import { checkNin, ninHash } from "@/lib/identity";
 import { createRecipient, friendlyPaystackError, listBanks, resolveAccount } from "@/lib/paystack";
 import { sendPayout } from "@/lib/payouts";
+import { kickPush } from "@/lib/push";
 
 const back = (base: string, q: Record<string, string>) => redirect(`${base}/withdraw?${new URLSearchParams(q)}`);
 
 export async function verifyNin(base: string, form: FormData) {
+  kickPush();
   const me = await requireProfile();
   const nin = String(form.get("nin") ?? "").replace(/\D/g, "");
   if (form.get("consent") !== "on") back(base, { error: "Tick the box to let Doova check your NIN." });
@@ -22,6 +24,7 @@ export async function verifyNin(base: string, form: FormData) {
 }
 
 export async function saveBank(base: string, form: FormData) {
+  kickPush();
   const me = await requireProfile();
   const bankCode = String(form.get("bank") ?? "");
   const number = String(form.get("account") ?? "").replace(/\D/g, "");
@@ -52,6 +55,7 @@ export async function saveBank(base: string, form: FormData) {
 }
 
 export async function withdraw(purse: "earnings" | "funds", base: string, form: FormData) {
+  kickPush();
   const me = await requireProfile();
   const naira = Number(String(form.get("amount") ?? "").replace(/[₦,\s]/g, ""));
   if (!Number.isFinite(naira) || naira <= 0) back(base, { error: "Enter how much to withdraw." });

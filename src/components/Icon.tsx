@@ -18,6 +18,7 @@ const PATHS: Record<string, React.ReactNode> = {
   plus: (<><path d="M12 5v14M5 12h14" /></>),
   download: (<><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14" /></>),
   x: (<><path d="M6 6l12 12M18 6L6 18" /></>),
+  bell: (<><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2H4.5z" /><path d="M10 20.5a2.2 2.2 0 0 0 4 0" /></>),
   users: (<><circle cx="9" cy="8.5" r="3.2" /><path d="M3 19.5c.9-3 3.2-4.5 6-4.5s5.1 1.5 6 4.5" /><path d="M16 5.5a3 3 0 0 1 0 6M18 15c1.6.6 2.6 2.1 3 4.5" /></>),
   trash: (<><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13" /></>),
   up: (<><path d="M6 15l6-6 6 6" /></>),

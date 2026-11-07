@@ -3,9 +3,11 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireProfile } from "@/lib/profile";
 import { friendlyTaskError, loadTask, runChecks, validate, type Answers } from "@/lib/tasks";
+import { kickPush } from "@/lib/push";
 
 /** "Start task": hold a slot for this doer (the database prevents over-booking). */
 export async function startTask(taskId: string) {
+  kickPush();
   const me = await requireProfile();
   const db = createAdminClient();
   const { error } = await db.rpc("reserve_slot", { p_task: taskId, p_doer: me.id });
@@ -17,6 +19,7 @@ export type SubmitState = { errors?: Record<string, string>; message?: string };
 
 /** Submit answers: validate, run the automatic checks, then hand to the database workflow. */
 export async function submitAnswers(taskId: string, _prev: SubmitState, form: FormData): Promise<SubmitState> {
+  kickPush();
   const me = await requireProfile();
   const task = await loadTask(taskId);
   if (!task?.form_schema) return { message: "This task can't be found." };
@@ -52,6 +55,7 @@ export async function submitAnswers(taskId: string, _prev: SubmitState, form: Fo
 
 /** Give up a held slot so someone else can take it. */
 export async function leaveTask(taskId: string) {
+  kickPush();
   const me = await requireProfile();
   const db = createAdminClient();
   await db.rpc("withdraw_reservation", { p_task: taskId, p_doer: me.id });
@@ -60,6 +64,7 @@ export async function leaveTask(taskId: string) {
 
 /** Appeal a rejection once, within the appeal window. Doova staff decide within 24 hours. */
 export async function appealRejection(taskId: string, form: FormData) {
+  kickPush();
   const me = await requireProfile();
   const reason = String(form.get("reason") ?? "").trim().slice(0, 1000);
   if (reason.length < 20) redirect(`/tasks/${taskId}/done?error=${encodeURIComponent("Explain in a sentence or two why the work should be approved (at least 20 characters).")}`);

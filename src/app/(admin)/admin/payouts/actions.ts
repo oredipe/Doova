@@ -4,9 +4,11 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { estimatedTransferFeeKobo, verifyTransfer } from "@/lib/paystack";
 import { requireStaff } from "@/lib/staff";
+import { kickPush } from "@/lib/push";
 
 /** Ask Paystack for a transfer's real status, for when a webhook went missing. */
 export async function checkPayout(id: string) {
+  kickPush();
   const me = await requireStaff("payout.retry");
   const db = createAdminClient();
   let msg: string;

@@ -5,9 +5,11 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireProfile } from "@/lib/profile";
 import { feeKobo, friendlyCreatorError, loadOwnTask, testMode, walletBalance } from "@/lib/creator";
+import { kickPush } from "@/lib/push";
 
 /** Lock the rewards and fee from the creator's wallet. During the pilot the task then waits for Doova's check. */
 export async function fundFromWallet(taskId: string) {
+  kickPush();
   const me = await requireProfile();
   await loadOwnTask(taskId, me);
   const db = createAdminClient();
@@ -20,6 +22,7 @@ export async function fundFromWallet(taskId: string) {
 
 /** TEST MODE ONLY: pretend a bank transfer arrived for exactly what's missing. */
 export async function addTestMoney(taskId: string) {
+  kickPush();
   if (!testMode()) throw new Error("Test money is switched off.");
   const me = await requireProfile();
   const t = await loadOwnTask(taskId, me);
@@ -37,6 +40,7 @@ export async function addTestMoney(taskId: string) {
 }
 
 export async function approveResponse(taskId: string, submissionId: string) {
+  kickPush();
   const me = await requireProfile();
   await loadOwnTask(taskId, me);
   const db = createAdminClient();
@@ -46,6 +50,7 @@ export async function approveResponse(taskId: string, submissionId: string) {
 }
 
 export async function rejectResponse(taskId: string, submissionId: string, form: FormData) {
+  kickPush();
   const me = await requireProfile();
   await loadOwnTask(taskId, me);
   const reason = String(form.get("reason") ?? "").trim().slice(0, 300);
@@ -58,6 +63,7 @@ export async function rejectResponse(taskId: string, submissionId: string, form:
 
 /** Close early: no new people can start; unused rewards come back as responses resolve. */
 export async function closeTask(taskId: string) {
+  kickPush();
   const me = await requireProfile();
   await loadOwnTask(taskId, me);
   const db = createAdminClient();

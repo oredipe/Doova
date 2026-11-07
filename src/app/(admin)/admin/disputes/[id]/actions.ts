@@ -3,8 +3,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { friendlyStaffError, requireStaff } from "@/lib/staff";
+import { kickPush } from "@/lib/push";
 
 export async function decideAppeal(id: string, form: FormData) {
+  kickPush();
   const me = await requireStaff("appeal.decide");
   const forDoer = form.get("decision") === "doer";
   const note = String(form.get("note") ?? "").trim();

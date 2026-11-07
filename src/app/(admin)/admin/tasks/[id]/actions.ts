@@ -3,8 +3,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { friendlyStaffError, requireStaff } from "@/lib/staff";
+import { kickPush } from "@/lib/push";
 
 export async function decideTask(id: string, form: FormData) {
+  kickPush();
   const me = await requireStaff("task.moderate");
   const decision = String(form.get("decision") ?? "");
   const note = String(form.get("note") ?? "").trim();

@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { estimatedTransferFeeKobo, validSignature, verifyTransaction, verifyTransfer } from "@/lib/paystack";
+import { kickPush } from "@/lib/push";
 
 // Paystack calls this for money arriving in a creator's account number (charge.success via a
 // dedicated account) and for transfers out (transfer.success / failed / reversed).
@@ -9,6 +10,7 @@ import { estimatedTransferFeeKobo, validSignature, verifyTransaction, verifyTran
 type Event = { event: string; data: Record<string, unknown> & { id?: number | string; reference?: string } };
 
 export async function POST(req: Request) {
+  kickPush();
   const raw = await req.text();
   if (!validSignature(raw, req.headers.get("x-paystack-signature"))) return new Response("bad signature", { status: 401 });
   let evt: Event;

@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { naira, requireProfile } from "@/lib/profile";
+import { PushPrompt } from "@/components/PushPrompt";
+import { vapidKeys } from "@/lib/push";
 
 export const metadata: Metadata = { title: "Tasks" };
 
@@ -41,6 +43,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
   const next = Math.min(me.level + 1, 5);
   const pct = me.level >= 5 ? 100 : Math.min(100, Math.round(((me.xp - LEVEL_XP[me.level]) / (LEVEL_XP[next] - LEVEL_XP[me.level])) * 100));
   const first = me.full_name?.split(" ")[0] ?? "there";
+  const keys = await vapidKeys().catch(() => null);
 
   return (
     <>
@@ -50,6 +53,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
           <span>Welcome to Doova, {first}. New tasks appear here as soon as creators lock the money in.</span>
         </div>
       )}
+      {keys && <PushPrompt publicKey={keys.publicKey} />}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 16 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <span className="c-small">{greeting()}</span>

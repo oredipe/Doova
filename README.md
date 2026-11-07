@@ -80,6 +80,16 @@ withdrawals are marked sent straight away. To connect Paystack:
 test mode accepts any 11 digits and uses the person's profile name. Before going live, set
 `NIN_HASH_SECRET` in Vercel to a long random string and never change it (it keeps one NIN per account).
 
+### Notifications
+The database writes notifications when things happen (paid, not approved, appeal kept, responses to
+review, task live or turned down, money added, withdrawal sent or failed, new tasks for doers); repeats
+collapse into one item. People see them in the bell, and can turn on phone notifications (Web Push) in
+Notifications or Settings. The push key pair is created automatically and kept in `app_secrets`; set
+`NEXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` in Vercel only if you want to manage it yourself.
+Pushes go out straight after app actions, and the database scheduler (pg_cron + pg_net) pokes
+`/api/push/dispatch` every minute for anything else. When the domain changes, update `site_url` in
+`platform_settings`. On iPhone, push works once Doova is added to the home screen.
+
 ### 3. Text messages (later)
 When the Termii account is ready: Supabase **Authentication → Hooks → Send SMS hook → HTTPS**,
 URL `https://YOUR-SITE/api/auth/sms-hook`. Put its secret in Vercel as `SUPABASE_SMS_HOOK_SECRET`,
@@ -119,7 +129,7 @@ TEST_DATABASE_URL=postgres://localhost/doova_test ./supabase/tests/run_all.sh
 It runs the money and workflow scenarios (`smoke_test.sql`), creator tiers, doer levels, XP,
 streaks, badges, staff and laptop sign-in (`progression_test.sql`), the admin dashboard's staff
 functions (`admin_test.sql`), NIN, bank accounts and withdrawals (`bank_test.sql`), staff conflicts and
-admin-only accounts (`staff_separation_test.sql`), and a 40-people-for-10-slots race test.
+admin-only accounts (`staff_separation_test.sql`), notifications (`notifications_test.sql`), and a 40-people-for-10-slots race test.
 
 ## Decisions built in (November 2026)
 - 15% platform fee on top of rewards; ₦100 per withdrawal; ₦1,500 minimum; no maximum or daily limit.

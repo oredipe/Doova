@@ -6,7 +6,7 @@ import { initialsOf, naira } from "@/lib/profile";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { highlight, MODERATION_REASONS, runModerationChecks } from "@/lib/moderation";
 import { TIER_NAMES, type FormSchema } from "@/lib/tasks";
-import { ago, lagosDate, requireStaff } from "@/lib/staff";
+import { ago, hasConflict, lagosDate, requireStaff } from "@/lib/staff";
 import { nowMs } from "@/lib/time";
 import { Top } from "../../Top";
 import { decideTask } from "./actions";
@@ -18,7 +18,7 @@ const KIND: Record<string, string> = { survey: "Survey", review: "Review", label
 const QTYPE: Record<string, string> = { single_choice: "One choice", multi_choice: "Several choices", rating: "Rating", short_text: "Short answer", long_text: "Written answer" };
 
 export default async function CheckTask({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string }> }) {
-  await requireStaff("task.moderate");
+  const me = await requireStaff("task.moderate");
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const now = nowMs();
@@ -50,6 +50,7 @@ export default async function CheckTask({ params, searchParams }: { params: Prom
   const flaggedWords = checks.flatMap((x) => (x.ok ? [] : x.matches ?? []));
   const fee = t.fee_kobo ?? 0;
   const waiting = t.status === "under_moderation";
+  const own = waiting && (await hasConflict(me.id, id));
   const elig = t.eligibility ?? {};
   const chips = [KIND[t.kind] ?? t.kind, `${naira(t.reward_kobo)} a slot`, `About ${t.estimated_minutes} min`, `${t.slots} slots`,
     t.review_mode === "auto" ? "Paid automatically" : "Creator reviews",
@@ -111,7 +112,13 @@ export default async function CheckTask({ params, searchParams }: { params: Prom
             </section>
           </div>
           <div className="ops-col">
-            {waiting && (
+            {own && (
+              <section className="c-card" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <h2 className="c-h2">This is your own task</h2>
+                <p className="c-sub" style={{ margin: 0 }}>Staff never decide on tasks they or their business posted. Another staff member with task approvals has to check this one.</p>
+              </section>
+            )}
+            {waiting && !own && (
               <section className="c-card">
                 <h2 className="c-h2" style={{ marginBottom: 12 }}>Your decision</h2>
                 <Decision action={decideTask.bind(null, id)} refund={naira(t.escrow_kobo + fee)} creator={creatorName}

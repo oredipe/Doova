@@ -9,7 +9,7 @@ import { getAuthUser } from "@/lib/supabase/server";
 // logged by name in the database (staff_* functions).
 
 export type StaffRole = "owner" | "moderator" | "finance" | "support";
-export type Staff = { id: string; name: string; email: string; role: StaffRole };
+export type Staff = { id: string; name: string; email: string; role: StaffRole; mustChangePassword: boolean; adminOnly: boolean };
 
 export const ROLE_NAMES: Record<StaffRole, string> = { owner: "Owner", moderator: "Moderator", finance: "Finance", support: "Support" };
 
@@ -29,11 +29,12 @@ export const getStaffRow = cache(async () => {
   const user = await getAuthUser();
   if (!user) return null;
   const db = createAdminClient();
-  const { data } = await db.from("staff_members").select("user_id, role, email, active, users!staff_members_user_id_fkey(full_name)")
+  const { data } = await db.from("staff_members").select("user_id, role, email, active, must_change_password, users!staff_members_user_id_fkey(full_name, staff_only)")
     .eq("user_id", user.id).eq("active", true).maybeSingle();
   if (!data) return { user, staff: null };
+  const u = data.users as unknown as { full_name: string | null; staff_only: boolean } | null;
   const staff: Staff = { id: data.user_id, role: data.role as StaffRole, email: data.email as string,
-    name: (data.users as unknown as { full_name: string | null } | null)?.full_name ?? "Staff" };
+    name: u?.full_name ?? "Staff", mustChangePassword: Boolean(data.must_change_password), adminOnly: Boolean(u?.staff_only) };
   return { user, staff };
 });
 
@@ -47,8 +48,15 @@ export async function requireStaff(action?: string): Promise<Staff> {
   if (!row) redirect("/admin/sign-in");
   if (!row.staff) notFound();
   if (row.user.aal !== "aal2") redirect("/admin/verify");
+  if (row.staff.mustChangePassword) redirect("/admin/password");
   if (action && !can(row.staff.role, action)) notFound();
   return row.staff;
+}
+
+/** True when the staff member posted the task (or belongs to the business that did), or did the work. */
+export async function hasConflict(staffId: string, taskId: string, doerId?: string): Promise<boolean> {
+  const { data } = await createAdminClient().rpc("staff_conflict", { p_staff: staffId, p_task: taskId, p_doer: doerId ?? null });
+  return Boolean(data);
 }
 
 /** Database errors in plain words for staff. */

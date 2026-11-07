@@ -69,3 +69,17 @@ export async function adminSignOut() {
   await supabase.auth.signOut();
   redirect("/admin/sign-in");
 }
+
+/** Staff choose their own password (required after a temporary one). Needs the authenticator step. */
+export async function changeAdminPassword(_: { error?: string }, form: FormData): Promise<{ error?: string }> {
+  const row = await getStaffRow();
+  if (!row?.staff || row.user.aal !== "aal2") return { error: "Sign in again first." };
+  const password = String(form.get("password") ?? "");
+  if (password.length < 10) return { error: "Use at least 10 characters." };
+  if (password !== String(form.get("again") ?? "")) return { error: "The two passwords don't match." };
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) return { error: /same|different/i.test(error.message) ? "Choose a password different from the temporary one." : "Couldn't save the password. Try a different one." };
+  await createAdminClient().rpc("staff_password_changed", { p_staff: row.staff.id });
+  redirect("/admin/settings?done=saved");
+}

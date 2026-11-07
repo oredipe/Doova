@@ -6,7 +6,7 @@ import { initialsOf, naira } from "@/lib/profile";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FLAG } from "@/lib/creator";
 import { LEVEL_NAMES, TIER_NAMES, type Answers, type FormSchema } from "@/lib/tasks";
-import { ago, lagosDate, requireStaff } from "@/lib/staff";
+import { ago, hasConflict, lagosDate, requireStaff } from "@/lib/staff";
 import { nowMs } from "@/lib/time";
 import { Top } from "../../Top";
 import { decideAppeal } from "./actions";
@@ -15,7 +15,7 @@ import { AppealDecision } from "./AppealDecision";
 export const metadata: Metadata = { title: "Decide an appeal" };
 
 export default async function DecideAppeal({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string }> }) {
-  await requireStaff("appeal.decide");
+  const me = await requireStaff("appeal.decide");
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const now = nowMs();
@@ -51,6 +51,7 @@ export default async function DecideAppeal({ params, searchParams }: { params: P
   const ca = creatorAppeals.data ?? [];
   const due = new Date(a.created_at).getTime() + 24 * 3600_000;
   const open = a.status === "open";
+  const own = open && (await hasConflict(me.id, t.id, s.doer_id));
 
   return (
     <>
@@ -106,7 +107,13 @@ export default async function DecideAppeal({ params, searchParams }: { params: P
             </section>
           </div>
           <div className="ops-col">
-            {open && (
+            {own && (
+              <section className="c-card" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <h2 className="c-h2">You can&rsquo;t decide this one</h2>
+                <p className="c-sub" style={{ margin: 0 }}>It&rsquo;s your own task or your own work. Another staff member who decides disputes has to take it.</p>
+              </section>
+            )}
+            {open && !own && (
               <section className="c-card">
                 <h2 className="c-h2" style={{ marginBottom: 12 }}>Your decision</h2>
                 <AppealDecision action={decideAppeal.bind(null, id)} reward={naira(t.reward_kobo)} doer={doerName} />

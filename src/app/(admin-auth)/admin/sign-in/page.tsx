@@ -12,7 +12,8 @@ export default function AdminSignInPage() {
       </div>
       <AdminSignInForm />
       <p className="c-small">
-        First time? Sign in to the Doova app with your phone, then open doova.ng/admin to set up your authenticator.
+        New admin account? Use the email and temporary password the owner sent you; you&rsquo;ll set up an authenticator next.
+        Admin linked to your Doova app account? The first time, sign in to the app with your phone, then open /admin.
         Lost your authenticator? Ask the account owner. Admin accounts can&rsquo;t use SMS codes.
       </p>
     </>

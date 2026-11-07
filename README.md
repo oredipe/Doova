@@ -54,6 +54,11 @@ is logged by name.
    authenticator app (Google Authenticator, Microsoft Authenticator…). After that, sign in at
    `/admin/sign-in` with email, password and the 6-digit code.
 
+Staff can be added two ways from Settings: an **admin-only account** (email sign-in with a temporary
+password the owner passes on; no phone, can't use the doer/creator app, must choose their own password
+first), or admin on their existing **Doova account** (by phone). Staff never decide on tasks they or their
+business posted, or on appeals about their own work.
+
 Supabase needs **Authentication → Sign In / Providers → Email** enabled (for the email sign-in) and
 **Multi-Factor → TOTP** enabled (on by default). Add more staff from Settings in the dashboard; they sign
 up in the app first.
@@ -113,7 +118,8 @@ TEST_DATABASE_URL=postgres://localhost/doova_test ./supabase/tests/run_all.sh
 
 It runs the money and workflow scenarios (`smoke_test.sql`), creator tiers, doer levels, XP,
 streaks, badges, staff and laptop sign-in (`progression_test.sql`), the admin dashboard's staff
-functions (`admin_test.sql`), NIN, bank accounts and withdrawals (`bank_test.sql`), and a 40-people-for-10-slots race test.
+functions (`admin_test.sql`), NIN, bank accounts and withdrawals (`bank_test.sql`), staff conflicts and
+admin-only accounts (`staff_separation_test.sql`), and a 40-people-for-10-slots race test.
 
 ## Decisions built in (November 2026)
 - 15% platform fee on top of rewards; ₦100 per withdrawal; ₦1,500 minimum; no maximum or daily limit.

@@ -12,14 +12,14 @@ import { Top } from "../Top";
 export const metadata: Metadata = { title: "Task approvals" };
 
 type Row = { id: string; title: string; instructions: string; reward_kobo: number; slots: number; estimated_minutes: number;
-  funded_at: string | null; form_schema: FormSchema | null; moderation_note?: string | null; moderated_at?: string | null; went_live_at?: string | null; status?: string };
+  funded_at: string | null; form_schema: FormSchema | null; creator_id?: string; created_by_user_id?: string; moderation_note?: string | null; moderated_at?: string | null; went_live_at?: string | null; status?: string };
 
 export default async function TaskApprovals({ searchParams }: { searchParams: Promise<{ done?: string }> }) {
-  await requireStaff("task.moderate");
+  const me = await requireStaff("task.moderate");
   const sp = await searchParams;
   const now = nowMs();
   const db = createAdminClient();
-  const cols = "id, title, instructions, reward_kobo, slots, estimated_minutes, funded_at, form_schema";
+  const cols = "id, title, instructions, reward_kobo, slots, estimated_minutes, funded_at, form_schema, creator_id, created_by_user_id";
   const [{ data: waiting }, { data: decided }] = await Promise.all([
     db.from("tasks").select(cols).eq("status", "under_moderation").order("funded_at").limit(200),
     db.from("tasks").select(cols + ", moderation_note, moderated_at, went_live_at, status").not("moderated_at", "is", null).order("moderated_at", { ascending: false }).limit(20),
@@ -43,6 +43,7 @@ export default async function TaskApprovals({ searchParams }: { searchParams: Pr
                   <span className="c-row-main">
                     <span className="c-row-title">{t.title}</span>
                     <span className="c-small">{naira(t.reward_kobo)} a slot · {t.slots} slots · about {t.estimated_minutes} min</span>
+                    {(t.creator_id === me.id || t.created_by_user_id === me.id) && <span className="c-pill c-pill-quiet" style={{ alignSelf: "flex-start", marginTop: 4 }}>Your own task: another staff member decides</span>}
                     {flags.length > 0
                       ? <span style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>{flags.map((f) => <span key={f.title} className="c-pill c-pill-bad">{f.title}</span>)}</span>
                       : <span className="c-pill c-pill-lime" style={{ alignSelf: "flex-start", marginTop: 4 }}>No flags</span>}

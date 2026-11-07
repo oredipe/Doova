@@ -3,7 +3,9 @@ import { Icon } from "@/components/Icon";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { lagosDate, requireStaff, ROLE_NAMES, type StaffRole } from "@/lib/staff";
 import { Top } from "../Top";
-import { addStaff, setStaffActive, setSwitch } from "./actions";
+import { setStaffActive, setSwitch } from "./actions";
+import { AddStaffForm } from "./AddStaffForm";
+import Link from "next/link";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -14,13 +16,7 @@ const SWITCHES = [
 const ACTION: Record<string, string> = {
   "task.approve": "Approved a task", "task.reject": "Turned down a task", "appeal.decide": "Decided an appeal", "user.suspend": "Suspended an account",
   "user.restore": "Restored an account", "money.check": "Recorded a statement", "money.explain": "Explained a difference", "settings.update": "Changed a setting",
-  "payout.check": "Checked a payout with Paystack", "staff.add": "Added staff", "staff.remove": "Removed staff", "staff.restore": "Restored staff",
-};
-const ROLE_HELP: Record<StaffRole, string> = {
-  owner: "Everything, including settings and staff",
-  moderator: "Task approvals, disputes, suspending accounts",
-  finance: "Money check and payouts",
-  support: "Looking up accounts",
+  "payout.check": "Checked a payout with Paystack", "staff.add": "Added staff", "staff.password": "Changed their password", "staff.remove": "Removed staff", "staff.restore": "Restored staff",
 };
 
 export default async function Settings({ searchParams }: { searchParams: Promise<{ done?: string; error?: string }> }) {
@@ -32,11 +28,11 @@ export default async function Settings({ searchParams }: { searchParams: Promise
   if (!owner) logQuery = logQuery.eq("staff_id", me.id);
   const [settings, team, log] = await Promise.all([
     db.from("platform_settings").select("key, value").in("key", SWITCHES.map((s) => s.key)),
-    owner ? db.from("staff_members").select("user_id, role, email, active, added_at, users!staff_members_user_id_fkey(full_name, phone)").order("added_at") : Promise.resolve({ data: [] }),
+    owner ? db.from("staff_members").select("user_id, role, email, active, added_at, users!staff_members_user_id_fkey(full_name, phone, staff_only)").order("added_at") : Promise.resolve({ data: [] }),
     logQuery,
   ]);
   const val = Object.fromEntries((settings.data ?? []).map((s) => [s.key as string, s.value === true]));
-  type T = { user_id: string; role: StaffRole; email: string; active: boolean; added_at: string; users: { full_name: string | null; phone: string } | null };
+  type T = { user_id: string; role: StaffRole; email: string; active: boolean; added_at: string; users: { full_name: string | null; phone: string | null; staff_only: boolean } | null };
   const staff = (team.data ?? []) as unknown as T[];
 
   return (
@@ -69,7 +65,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
                   <div key={s.user_id} className="ops-check" style={{ alignItems: "center", opacity: s.active ? 1 : 0.55 }}>
                     <span style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1, minWidth: 0 }}>
                       <strong style={{ fontSize: 15 }}>{s.users?.full_name} · {ROLE_NAMES[s.role]}{s.active ? "" : " · removed"}</strong>
-                      <span className="c-small" style={{ overflowWrap: "anywhere" }}>{s.email} · {s.users?.phone}</span>
+                      <span className="c-small" style={{ overflowWrap: "anywhere" }}>{s.email} · {s.users?.staff_only ? "Admin-only account" : `Doova account ${s.users?.phone}`}</span>
                     </span>
                     {s.user_id !== me.id && (
                       <form action={setStaffActive.bind(null, s.user_id, !s.active)}>
@@ -82,28 +78,16 @@ export default async function Settings({ searchParams }: { searchParams: Promise
             </div>
             <div className="ops-col">
               <section className="c-card">
-                <h2 className="c-h2" style={{ marginBottom: 6 }}>Add staff</h2>
-                <p className="c-small" style={{ marginBottom: 12 }}>They need a Doova account first (sign up in the app with their phone).</p>
-                <form action={addStaff} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <label className="c-field"><span className="c-label">Their Doova phone number</span>
-                    <input name="phone" className="c-input" inputMode="tel" placeholder="0803 123 4567" required /></label>
-                  <label className="c-field"><span className="c-label">Work email (for admin sign-in)</span>
-                    <input name="email" type="email" className="c-input" required /></label>
-                  <fieldset style={{ border: 0, padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
-                    <legend className="c-label" style={{ marginBottom: 8 }}>Role</legend>
-                    {(Object.keys(ROLE_HELP) as StaffRole[]).map((r) => (
-                      <label key={r} className="c-choice" style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: 12, borderRadius: 12, border: "1px solid rgba(17,17,17,.14)", cursor: "pointer" }}>
-                        <input type="radio" name="role" value={r} defaultChecked={r === "moderator"} style={{ marginTop: 3 }} />
-                        <span style={{ display: "flex", flexDirection: "column" }}><strong style={{ fontSize: 15 }}>{ROLE_NAMES[r]}</strong><span className="c-small">{ROLE_HELP[r]}</span></span>
-                      </label>
-                    ))}
-                  </fieldset>
-                  <button className="c-btn c-btn-primary c-btn-block">Add to the team</button>
-                </form>
+                <h2 className="c-h2" style={{ marginBottom: 12 }}>Add staff</h2>
+                <AddStaffForm />
               </section>
             </div>
           </div>
         )}
+        <section className="c-card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <span style={{ display: "flex", flexDirection: "column", gap: 2 }}><strong>Your sign-in</strong><span className="c-small">{me.email}{me.adminOnly ? " · admin-only account" : " · linked to your Doova account"}</span></span>
+          <Link href="/admin/password?change=1" className="c-btn c-btn-quiet" style={{ minHeight: 40 }}>Change password</Link>
+        </section>
         <h2 className="c-sec">{owner ? "Activity log" : "Activity"}</h2>
         {(log.data ?? []).length === 0 ? <div className="c-card"><p className="c-sub">Nothing yet.</p></div> : (
           <div className="ops-table-wrap">

@@ -13,7 +13,7 @@ export default async function Users({ searchParams }: { searchParams: Promise<{ 
   await requireStaff("user.view");
   const { q = "" } = await searchParams;
   const db = createAdminClient();
-  let query = db.from("users").select("id, full_name, phone, level, creator_tier, status, kyc_tier, created_at").order("created_at", { ascending: false }).limit(50);
+  let query = db.from("users").select("id, full_name, phone, level, creator_tier, status, kyc_tier, created_at, staff_only").order("created_at", { ascending: false }).limit(50);
   const term = q.trim().replace(/[%,()]/g, "");
   if (term) {
     const digits = term.replace(/\D/g, "");
@@ -37,7 +37,7 @@ export default async function Users({ searchParams }: { searchParams: Promise<{ 
                 <span className="c-ico" style={{ background: "var(--c-paid-soft)", fontWeight: 700, fontSize: 13 }}>{initialsOf(u.full_name)}</span>
                 <span className="c-row-main">
                   <span className="c-row-title" style={{ fontSize: 16 }}>{u.full_name ?? "No name yet"}</span>
-                  <span className="c-small">{u.phone} · Level {u.level} {LEVEL_NAMES[u.level]} · joined {lagosDate(u.created_at, { day: "numeric", month: "short" })}{u.kyc_tier ? " · NIN checked" : ""}</span>
+                  <span className="c-small">{u.staff_only ? "Admin-only staff account" : `${u.phone} · Level ${u.level} ${LEVEL_NAMES[u.level]}`} · joined {lagosDate(u.created_at, { day: "numeric", month: "short" })}{u.kyc_tier ? " · NIN checked" : ""}</span>
                 </span>
                 {u.status !== "active" && <span className="c-pill c-pill-bad" style={{ textTransform: "capitalize" }}>{u.status}</span>}
                 <Icon name="chev" size={16} />

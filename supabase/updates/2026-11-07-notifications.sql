@@ -1,6 +1,6 @@
 -- Doova update, 7 Nov 2026: notifications (the bell and phone push).
 -- Paste all of this into a New query in the Supabase SQL editor and press Run (choose "Run without RLS" if asked).
--- Run it once.
+-- Running it twice does no harm.
 
 -- 017_notifications.sql
 -- 7 Nov 2026. In-app notifications (the bell) and phone push.
@@ -8,7 +8,7 @@
 -- (app actions, webhooks, scheduled auto-approvals). The app shows them; a dispatcher sends pushes.
 -- Repeats collapse into one unread item ("3 responses to review", "4 new tasks for you").
 
-create table notifications (
+create table if not exists notifications (
   id            uuid primary key default gen_random_uuid(),
   user_id       uuid not null references users(id) on delete cascade,
   kind          text not null,           -- paid, rejected, appeal_kept, review_waiting, task_live, task_turned_down,
@@ -23,11 +23,11 @@ create table notifications (
   read_at       timestamptz,
   pushed_at     timestamptz              -- null = push not sent yet
 );
-create index notifications_user_recent on notifications (user_id, created_at desc);
-create index notifications_unpushed on notifications (created_at) where pushed_at is null;
-create unique index notifications_collapse on notifications (user_id, collapse_key) where read_at is null and collapse_key is not null;
+create index if not exists notifications_user_recent on notifications (user_id, created_at desc);
+create index if not exists notifications_unpushed on notifications (created_at) where pushed_at is null;
+create unique index if not exists notifications_collapse on notifications (user_id, collapse_key) where read_at is null and collapse_key is not null;
 
-create table push_subscriptions (
+create table if not exists push_subscriptions (
   id            uuid primary key default gen_random_uuid(),
   user_id       uuid not null references users(id) on delete cascade,
   endpoint      text not null unique,
@@ -37,13 +37,13 @@ create table push_subscriptions (
   created_at    timestamptz not null default now(),
   last_ok_at    timestamptz
 );
-create index push_subscriptions_user on push_subscriptions (user_id);
+create index if not exists push_subscriptions_user on push_subscriptions (user_id);
 
 alter table users add column if not exists notify_push boolean not null default true;
 alter table users add column if not exists notify_new_tasks boolean not null default true;
 
 -- Secrets the app creates for itself (the phone-push key pair). Service role only, like everything else.
-create table app_secrets (key text primary key, value text not null, created_at timestamptz not null default now());
+create table if not exists app_secrets (key text primary key, value text not null, created_at timestamptz not null default now());
 
 insert into platform_settings (key, value, description) values
   ('site_url', '"https://doova-app.vercel.app"', 'Public address of the app; used for links and the push dispatcher. Change when the domain moves.'),

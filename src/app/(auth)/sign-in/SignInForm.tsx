@@ -92,10 +92,7 @@ export function SignInForm({ next }: { next: string }) {
         <form onSubmit={withPassword} style={{ display: "flex", flexDirection: "column", gap: 18 }} noValidate>
           {phoneField}
           <div className="c-field">
-            <span style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-              <label className="c-label" htmlFor="si-pass">Password</label>
-              <Link href="/forgot-password" className="c-small" style={{ color: "var(--c-ink)", fontWeight: 600 }}>Forgot password?</Link>
-            </span>
+            <label className="c-label" htmlFor="si-pass">Password</label>
             <input id="si-pass" type="password" className="c-input" autoComplete="current-password"
               value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
@@ -103,6 +100,7 @@ export function SignInForm({ next }: { next: string }) {
           <button className="c-btn c-btn-primary c-btn-block" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
             <button type="button" className="c-link" onClick={() => { setMode("code-ask"); setError(null); }}>Sign in with a text code instead</button>
+            <Link href="/forgot-password" className="c-link" style={{ whiteSpace: "nowrap" }}>Forgot password?</Link>
           </div>
         </form>
       )}

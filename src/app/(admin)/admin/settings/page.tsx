@@ -16,7 +16,7 @@ const SWITCHES = [
 const ACTION: Record<string, string> = {
   "task.approve": "Approved a task", "task.reject": "Turned down a task", "appeal.decide": "Decided an appeal", "user.suspend": "Suspended an account",
   "user.restore": "Restored an account", "money.check": "Recorded a statement", "money.explain": "Explained a difference", "settings.update": "Changed a setting",
-  "payout.check": "Checked a payout with Paystack", "staff.add": "Added staff", "staff.password": "Changed their password", "staff.remove": "Removed staff", "staff.restore": "Restored staff",
+  "payout.check": "Checked a payout with Paystack", "staff.add": "Added staff", "staff.password": "Changed their password", "staff.mfa_removed": "Removed an authenticator", "staff.remove": "Removed staff", "staff.restore": "Restored staff",
 };
 
 export default async function Settings({ searchParams }: { searchParams: Promise<{ done?: string; error?: string }> }) {
@@ -39,7 +39,9 @@ export default async function Settings({ searchParams }: { searchParams: Promise
     <>
       <Top title={owner ? "Settings" : "Your activity"} sub={owner ? "Switches, staff and the activity log. Every change is logged with your name." : "Everything you've done in admin, newest first"} />
       <div className="ops-body">
-        {sp.done && <div className="c-note" role="status"><Icon name="check" size={18} /><span>{sp.done === "added" ? "Added. They sign in to the Doova app with their phone, then open doova.ng/admin to set up their authenticator." : "Saved."}</span></div>}
+        {sp.done && <div className="c-note" role="status"><Icon name="check" size={18} /><span>{sp.done === "added" ? "Added. They sign in to the Doova app with their phone, then open doova.ng/admin to set up their authenticator."
+          : sp.done === "removed_linked" ? "Removed from admin. Their authenticator was taken off too, so their Doova app account works like anyone else’s (password resets need only a text code)."
+          : "Saved."}</span></div>}
         {sp.error && <p className="c-error" role="alert">{sp.error}</p>}
         {owner && (
           <div className="ops-two">

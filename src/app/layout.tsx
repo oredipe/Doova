@@ -17,7 +17,6 @@ export const metadata: Metadata = {
   title: { default: "Doova", template: "%s · Doova" },
   description: "Real tasks, real pay. The money is locked before anyone starts.",
   applicationName: "Doova",
-  icons: { apple: "/apple-touch-icon.png" },
   appleWebApp: { capable: true, title: "Doova", statusBarStyle: "default" },
 };
 

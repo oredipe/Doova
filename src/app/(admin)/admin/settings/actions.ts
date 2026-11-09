@@ -29,9 +29,20 @@ export async function addStaff(form: FormData) {
 
 export async function setStaffActive(userId: string, active: boolean) {
   const me = await requireStaff("staff.manage");
-  const { error } = await createAdminClient().rpc("staff_set_active", { p_by: me.id, p_user: userId, p_active: active });
+  const db = createAdminClient();
+  const { error } = await db.rpc("staff_set_active", { p_by: me.id, p_user: userId, p_active: active });
   if (error) back(`error=${encodeURIComponent(friendlyStaffError(error.message))}`);
   revalidatePath("/admin/settings");
+  if (active) back("done=saved");
+  // Removing admin from someone's own Doova (phone) account: take its authenticator away too, so it's an
+  // ordinary account again (password resets need only a text code). Admin-only accounts keep theirs.
+  const { data: u } = await db.from("users").select("staff_only").eq("id", userId).maybeSingle();
+  if (u && !u.staff_only) {
+    const { data } = await db.auth.admin.mfa.listFactors({ userId });
+    for (const f of data?.factors ?? []) await db.auth.admin.mfa.deleteFactor({ id: f.id, userId });
+    await db.rpc("log_staff_action", { p_staff: me.id, p_action: "staff.mfa_removed", p_target_type: "user", p_target_id: userId, p_detail: { factors: data?.factors?.length ?? 0 } });
+    back("done=removed_linked");
+  }
   back("done=saved");
 }
 

@@ -1,7 +1,7 @@
 // Supabase Auth errors in plain words.
 export function friendlyAuthError(message: string | undefined): string {
   const m = (message ?? "").toLowerCase();
-  if (m.includes("invalid login credentials")) return "That phone number and password don’t match. Try again, or sign in with a text code.";
+  if (m.includes("invalid login credentials")) return "That phone number and password don’t match. Try again, or tap “Forgot password?” to choose a new one.";
   if (m.includes("token has expired") || m.includes("otp_expired") || m.includes("expired")) return "That code has expired. Ask for a new one.";
   if (m.includes("invalid") && m.includes("otp") || m.includes("token") && m.includes("invalid")) return "That code isn’t right. Check the text and try again.";
   if (m.includes("rate limit") || m.includes("too many") || m.includes("security purposes")) return "Too many tries. Wait a minute, then try again.";

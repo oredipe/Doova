@@ -21,8 +21,8 @@ function greeting() {
   return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
 }
 
-export default async function TasksPage({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
-  const { welcome } = await searchParams;
+export default async function TasksPage({ searchParams }: { searchParams: Promise<{ welcome?: string; reset?: string }> }) {
+  const { welcome, reset } = await searchParams;
   const me = await requireProfile();
   const db = createAdminClient();
   const minePromise = db.from("submissions").select("task_id, status").eq("doer_id", me.id);
@@ -47,6 +47,12 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
 
   return (
     <>
+      {reset && (
+        <div className="c-note" role="status">
+          <Icon name="check" size={18} />
+          <span>Your new password is saved. Use it next time you sign in.</span>
+        </div>
+      )}
       {welcome && (
         <div className="c-note" role="status">
           <Icon name="spark" size={18} />

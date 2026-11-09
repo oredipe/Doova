@@ -92,7 +92,10 @@ export function SignInForm({ next }: { next: string }) {
         <form onSubmit={withPassword} style={{ display: "flex", flexDirection: "column", gap: 18 }} noValidate>
           {phoneField}
           <div className="c-field">
-            <label className="c-label" htmlFor="si-pass">Password</label>
+            <span style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
+              <label className="c-label" htmlFor="si-pass">Password</label>
+              <Link href="/forgot-password" className="c-small" style={{ color: "var(--c-ink)", fontWeight: 600 }}>Forgot password?</Link>
+            </span>
             <input id="si-pass" type="password" className="c-input" autoComplete="current-password"
               value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>

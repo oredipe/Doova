@@ -85,7 +85,7 @@ export async function verifyTransfer(reference: string) {
 // ---------- money in: creator account numbers ----------
 export type DedicatedAccount = { bank: string; accountNumber: string; accountName: string; customerCode: string };
 
-export async function createDedicatedAccount(p: { userId: string; firstName: string; lastName: string; phone: string; email: string }): Promise<DedicatedAccount> {
+export async function createDedicatedAccount(p: { userId: string; firstName: string; lastName: string; phone?: string; email: string }): Promise<DedicatedAccount> {
   if (!paystackConfigured()) throw new PaystackError("Paystack isn't connected yet");
   const customer = await call<{ customer_code: string }>("/customer", {
     method: "POST", body: { email: p.email, first_name: p.firstName, last_name: p.lastName, phone: p.phone, metadata: { doova_user: p.userId } },

@@ -7,7 +7,8 @@ import { can, lagosDate, requireStaff } from "@/lib/staff";
 import { TASK_STATUS, testMode } from "@/lib/creator";
 import { budgetNumbers, DOOVA_ORG } from "@/lib/doova";
 import { Top } from "../Top";
-import { budgetFromFees, budgetRecordTransfer, budgetTestMoney } from "./actions";
+import { paystackConfigured } from "@/lib/paystack";
+import { budgetFromFees, budgetGetAccountNumber, budgetRecordTransfer, budgetTestMoney } from "./actions";
 
 export const metadata: Metadata = { title: "Doova tasks" };
 
@@ -15,6 +16,7 @@ const DONE: Record<string, string> = {
   fees: "Moved from earned fees into the budget.",
   transfer: "Transfer recorded. The budget is topped up.",
   test: "Test money added to the budget.",
+  account: "The budget has its own account number now. Transfers into it top up the budget by themselves.",
 };
 
 type T = { id: string; title: string; status: string; reward_kobo: number; slots: number; created_at: string; went_live_at: string | null; ends_at: string };
@@ -24,10 +26,11 @@ export default async function DoovaTasks({ searchParams }: { searchParams: Promi
   const sp = await searchParams;
   const owner = can(me.role, "settings.update");
   const db = createAdminClient();
-  const [money, { data: tasksData }] = await Promise.all([
+  const [money, { data: tasksData }, { data: acct }] = await Promise.all([
     budgetNumbers(),
     db.from("tasks").select("id, title, status, reward_kobo, slots, created_at, went_live_at, ends_at")
       .eq("creator_type", "org").eq("creator_id", DOOVA_ORG).neq("status", "pending_funding").order("created_at", { ascending: false }).limit(100),
+    db.from("virtual_accounts").select("issuing_bank, account_number, account_name").eq("owner_type", "org").eq("owner_id", DOOVA_ORG).eq("provider", "paystack").eq("is_active", true).maybeSingle(),
   ]);
   const tasks = (tasksData ?? []) as T[];
   const ids = tasks.map((t) => t.id);
@@ -90,6 +93,28 @@ export default async function DoovaTasks({ searchParams }: { searchParams: Promi
             <div className="ops-col">
               <h2 className="c-sec" style={{ margin: 0 }}>Top up the budget</h2>
               <section className="c-card">
+                <h3 className="c-h2" style={{ marginBottom: 6, fontSize: 17 }}>Transfer from your bank app</h3>
+                {acct ? (
+                  <>
+                    <div style={{ background: "var(--c-ground)", borderRadius: 14, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 2, margin: "6px 0 10px" }}>
+                      <span className="c-small">{acct.issuing_bank}</span>
+                      <strong style={{ fontSize: 26, letterSpacing: "0.04em" }}>{acct.account_number}</strong>
+                      <span className="c-small">{acct.account_name}</span>
+                    </div>
+                    <p className="c-small">Send from Doova&rsquo;s company account to this number. The budget goes up by itself within minutes. Paystack&rsquo;s fee is 1%, at most ₦300 per transfer.</p>
+                  </>
+                ) : paystackConfigured() ? (
+                  <form action={budgetGetAccountNumber} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <p className="c-small">Give the budget its own account number. Anything you transfer into it from a bank app tops up the budget automatically.</p>
+                    <label className="c-field"><span className="c-label">Company email (for Paystack receipts)</span>
+                      <input name="email" type="email" className="c-input" defaultValue={me.email} required /></label>
+                    <button className="c-btn c-btn-primary c-btn-block">Get the budget an account number</button>
+                  </form>
+                ) : (
+                  <p className="c-small">Once Paystack is connected, the budget gets its own account number here. Transfers into it from any bank app top it up automatically.</p>
+                )}
+              </section>
+              <section className="c-card">
                 <h3 className="c-h2" style={{ marginBottom: 6, fontSize: 17 }}>From fees Doova has earned</h3>
                 <p className="c-small" style={{ marginBottom: 12 }}>Available: {naira(money.feesFreeKobo)} (fees earned minus partner fees). Money that belongs to users can never be used.</p>
                 <form action={budgetFromFees} style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -98,8 +123,8 @@ export default async function DoovaTasks({ searchParams }: { searchParams: Promi
                 </form>
               </section>
               <section className="c-card">
-                <h3 className="c-h2" style={{ marginBottom: 6, fontSize: 17 }}>Record a company transfer</h3>
-                <p className="c-small" style={{ marginBottom: 12 }}>After sending money from Doova&rsquo;s company account into the Paystack balance, record it here with its reference. Each reference counts once.</p>
+                <h3 className="c-h2" style={{ marginBottom: 6, fontSize: 17 }}>Record a transfer by hand</h3>
+                <p className="c-small" style={{ marginBottom: 12 }}>For money that reached the Paystack balance another way (for example a balance top-up in the Paystack dashboard). Record it with its reference. Each reference counts once.</p>
                 <form action={budgetRecordTransfer} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <label className="c-field"><span className="c-label">Amount that arrived (₦)</span>
                     <input name="amount" className="c-input" inputMode="decimal" placeholder="e.g. 50,000" required /></label>

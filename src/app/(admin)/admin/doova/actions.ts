@@ -6,6 +6,7 @@ import { friendlyStaffError, requireStaff } from "@/lib/staff";
 import { checkDraft, DOOVA_RULES, type Draft } from "@/lib/taskDraft";
 import { DOOVA_ORG, loadDoovaTask, nairaToKobo } from "@/lib/doova";
 import { testMode } from "@/lib/creator";
+import { createDedicatedAccount, paystackConfigured } from "@/lib/paystack";
 import { kickPush } from "@/lib/push";
 
 const back = (path: string, key: "done" | "error", v: string): never => redirect(`${path}${path.includes("?") ? "&" : "?"}${key}=${encodeURIComponent(v)}`);
@@ -51,6 +52,29 @@ export async function budgetRecordTransfer(form: FormData) {
   const { error } = await db.rpc("staff_budget_record_transfer", { p_staff: me.id, p_reference: ref, p_amount_kobo: kobo });
   if (error) back("/admin/doova", "error", friendlyStaffError(error.message));
   back("/admin/doova", "done", "transfer");
+}
+
+/** The budget's own account number (Paystack dedicated account). Transfers into it from any bank app
+ * top up the budget automatically, through the same webhook as creators' account numbers. */
+export async function budgetGetAccountNumber(form: FormData) {
+  const me = await requireStaff("settings.update");
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) back("/admin/doova", "error", "Enter the company email for Paystack receipts.");
+  if (!paystackConfigured()) back("/admin/doova", "error", "The budget's account number arrives once Paystack is connected. Until then, use the other ways to top up.");
+  const db = createAdminClient();
+  let failed = "";
+  try {
+    const a = await createDedicatedAccount({ userId: DOOVA_ORG, firstName: "Doova", lastName: "Budget", email });
+    const { error } = await db.rpc("save_virtual_account", { p_owner_type: "org", p_owner_id: DOOVA_ORG, p_provider: "paystack", p_bank: a.bank,
+      p_account_number: a.accountNumber, p_account_name: a.accountName, p_provider_ref: a.customerCode });
+    if (error) failed = friendlyStaffError(error.message);
+    else await db.rpc("log_staff_action", { p_staff: me.id, p_action: "budget.account_number", p_target_type: "budget", p_target_id: "doova", p_detail: { account: a.accountNumber } });
+  } catch (e) {
+    const m = e instanceof Error ? e.message : "";
+    failed = /bvn|identif|validat/i.test(m) ? "Paystack needs Doova's business verified before it gives out account numbers. Finish that in the Paystack dashboard." : "Paystack couldn't create the account number just now. Please try again in a minute.";
+  }
+  if (failed) back("/admin/doova", "error", failed);
+  back("/admin/doova", "done", "account");
 }
 
 /** TEST MODE ONLY: pretend company money arrived. */

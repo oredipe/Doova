@@ -68,9 +68,10 @@ Doova's own tasks: promotions, feature tests, platform checks. Owners post them 
 tasks** with the usual task builder, but with no minimum reward or slots and no fee; they go live straight
 away and doers see them marked **From Doova**. A ₦0 task pays nothing and earns a small amount of XP
 instead (`xp_unpaid_task` in `platform_settings`, 10 to start); it's labelled "Unpaid · earns XP".
-Rewards come from the **Doova budget**, which owners top up three ways: from fees Doova has already earned,
-by recording a transfer from the company account into the Paystack balance (each reference counts once),
-or with pretend money in test mode. Unused rewards return to the budget when a task closes. Owners and
+Rewards come from the **Doova budget**. Owners top it up by transferring from any bank app to the budget's
+own Paystack account number (created once on the page; credited automatically like a creator's), from fees
+Doova has already earned, by recording a transfer by hand with its reference (each counts once), or with
+pretend money in test mode. Unused rewards return to the budget when a task closes. Owners and
 moderators review responses and download answers; Doova staff can't take part in Doova tasks. The money
 check shows the budget separately from money owed to users.
 

@@ -8,6 +8,7 @@ import { TASK_STATUS, testMode } from "@/lib/creator";
 import { budgetNumbers, DOOVA_ORG } from "@/lib/doova";
 import { Top } from "../Top";
 import { paystackConfigured } from "@/lib/paystack";
+import { TopUpOptions } from "./TopUpOptions";
 import { budgetFromFees, budgetGetAccountNumber, budgetRecordTransfer, budgetTestMoney } from "./actions";
 
 export const metadata: Metadata = { title: "Doova tasks" };
@@ -91,58 +92,64 @@ export default async function DoovaTasks({ searchParams }: { searchParams: Promi
 
           {owner && (
             <div className="ops-col">
-              <h2 className="c-sec" style={{ margin: 0 }}>Top up the budget</h2>
-              <section className="c-card">
-                <h3 className="c-h2" style={{ marginBottom: 6, fontSize: 17 }}>Transfer from your bank app</h3>
-                {acct ? (
-                  <>
-                    <div style={{ background: "var(--c-ground)", borderRadius: 14, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 2, margin: "6px 0 10px" }}>
-                      <span className="c-small">{acct.issuing_bank}</span>
-                      <strong style={{ fontSize: 26, letterSpacing: "0.04em" }}>{acct.account_number}</strong>
-                      <span className="c-small">{acct.account_name}</span>
+              <TopUpOptions options={[
+                {
+                  id: "bank", icon: "wallet", tag: "Easiest", title: "Transfer from your bank app",
+                  sub: acct ? `Send to ${acct.account_number} (${acct.issuing_bank}). Arrives by itself.` : "Get the budget its own account number, then transfer to it any time.",
+                  panel: acct ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      <div style={{ background: "var(--c-ground)", borderRadius: 14, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 2 }}>
+                        <span className="c-small">{acct.issuing_bank}</span>
+                        <strong style={{ fontSize: 24, letterSpacing: "0.04em" }}>{acct.account_number}</strong>
+                        <span className="c-small">{acct.account_name}</span>
+                      </div>
+                      <p className="c-small" style={{ margin: 0 }}>Send from Doova&rsquo;s company account. The budget goes up within minutes. Paystack&rsquo;s fee is 1%, at most ₦300 per transfer.</p>
                     </div>
-                    <p className="c-small">Send from Doova&rsquo;s company account to this number. The budget goes up by itself within minutes. Paystack&rsquo;s fee is 1%, at most ₦300 per transfer.</p>
-                  </>
-                ) : paystackConfigured() ? (
-                  <form action={budgetGetAccountNumber} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    <p className="c-small">Give the budget its own account number. Anything you transfer into it from a bank app tops up the budget automatically.</p>
-                    <label className="c-field"><span className="c-label">Company email (for Paystack receipts)</span>
-                      <input name="email" type="email" className="c-input" defaultValue={me.email} required /></label>
-                    <button className="c-btn c-btn-primary c-btn-block">Get the budget an account number</button>
-                  </form>
-                ) : (
-                  <p className="c-small">Once Paystack is connected, the budget gets its own account number here. Transfers into it from any bank app top it up automatically.</p>
-                )}
-              </section>
-              <section className="c-card">
-                <h3 className="c-h2" style={{ marginBottom: 6, fontSize: 17 }}>From fees Doova has earned</h3>
-                <p className="c-small" style={{ marginBottom: 12 }}>Available: {naira(money.feesFreeKobo)} (fees earned minus partner fees). Money that belongs to users can never be used.</p>
-                <form action={budgetFromFees} style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <input name="amount" className="c-input" inputMode="decimal" placeholder="Amount in ₦" aria-label="Amount from fees in naira" required style={{ flex: "1 1 160px" }} />
-                  <button className="c-btn c-btn-quiet" disabled={money.feesFreeKobo === 0}>Move to budget</button>
-                </form>
-              </section>
-              <section className="c-card">
-                <h3 className="c-h2" style={{ marginBottom: 6, fontSize: 17 }}>Record a transfer by hand</h3>
-                <p className="c-small" style={{ marginBottom: 12 }}>For money that reached the Paystack balance another way (for example a balance top-up in the Paystack dashboard). Record it with its reference. Each reference counts once.</p>
-                <form action={budgetRecordTransfer} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <label className="c-field"><span className="c-label">Amount that arrived (₦)</span>
-                    <input name="amount" className="c-input" inputMode="decimal" placeholder="e.g. 50,000" required /></label>
-                  <label className="c-field"><span className="c-label">Transfer reference</span>
-                    <input name="reference" className="c-input" maxLength={80} placeholder="From the Paystack dashboard" required /></label>
-                  <button className="c-btn c-btn-primary c-btn-block">Record transfer</button>
-                </form>
-              </section>
-              {testMode() && (
-                <section className="c-card" style={{ border: "2px dashed var(--c-line)" }}>
-                  <h3 className="c-h2" style={{ marginBottom: 6, fontSize: 17 }}>Test money</h3>
-                  <p className="c-small" style={{ marginBottom: 12 }}>Test mode only. Adds pretend money so you can try Doova tasks.</p>
-                  <form action={budgetTestMoney} style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    <input name="amount" className="c-input" inputMode="decimal" defaultValue="50000" aria-label="Test amount in naira" style={{ flex: "1 1 160px" }} />
-                    <button className="c-btn c-btn-quiet">Add test money</button>
-                  </form>
-                </section>
-              )}
+                  ) : paystackConfigured() ? (
+                    <form action={budgetGetAccountNumber} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      <label className="c-field"><span className="c-label">Company email (for Paystack receipts)</span>
+                        <input name="email" type="email" className="c-input" defaultValue={me.email} required /></label>
+                      <button className="c-btn c-btn-primary">Get an account number</button>
+                    </form>
+                  ) : (
+                    <p className="c-small" style={{ margin: 0 }}>Available once Paystack is connected. Until then, use one of the other ways.</p>
+                  ),
+                },
+                {
+                  id: "fees", icon: "spark", title: "Use fees Doova has earned",
+                  sub: `${naira(money.feesFreeKobo)} available. Users' money is never touched.`,
+                  panel: (
+                    <form action={budgetFromFees} style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      <input name="amount" className="c-input" inputMode="decimal" placeholder="Amount in ₦" aria-label="Amount from fees in naira" required style={{ flex: "1 1 140px" }} />
+                      <button className="c-btn c-btn-primary" disabled={money.feesFreeKobo === 0}>Move to budget</button>
+                    </form>
+                  ),
+                },
+                {
+                  id: "manual", icon: "mytasks", title: "Record a transfer by hand",
+                  sub: "For money that reached the Paystack balance another way.",
+                  panel: (
+                    <form action={budgetRecordTransfer} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      <label className="c-field"><span className="c-label">Amount that arrived (₦)</span>
+                        <input name="amount" className="c-input" inputMode="decimal" placeholder="e.g. 50,000" required /></label>
+                      <label className="c-field"><span className="c-label">Transfer reference</span>
+                        <input name="reference" className="c-input" maxLength={80} placeholder="From the Paystack dashboard" required /></label>
+                      <span className="c-small">Each reference counts once.</span>
+                      <button className="c-btn c-btn-primary">Record transfer</button>
+                    </form>
+                  ),
+                },
+                ...(testMode() ? [{
+                  id: "test", icon: "info" as const, tag: "Test mode", quietTag: true, title: "Add test money",
+                  sub: "Pretend money for trying Doova tasks.",
+                  panel: (
+                    <form action={budgetTestMoney} style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      <input name="amount" className="c-input" inputMode="decimal" defaultValue="50000" aria-label="Test amount in naira" style={{ flex: "1 1 140px" }} />
+                      <button className="c-btn c-btn-primary">Add test money</button>
+                    </form>
+                  ),
+                }] : []),
+              ]} />
             </div>
           )}
         </div>

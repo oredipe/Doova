@@ -9,7 +9,7 @@ import { CodeInput } from "@/components/CodeInput";
 
 // Forgot password: prove it's your phone with a text code, then choose a new password.
 // The code signs you in; the new password replaces the old one.
-type Step = "phone" | "code" | "password";
+type Step = "phone" | "code" | "authenticator" | "password";
 
 export function ResetFlow() {
   const router = useRouter();
@@ -18,6 +18,7 @@ export function ResetFlow() {
   const [phone, setPhone] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [pass, setPass] = useState("");
+  const [totp, setTotp] = useState("");
   const [again, setAgain] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -49,6 +50,22 @@ export function ResetFlow() {
     setBusy(false);
     if (error) { setError(friendlyAuthError(error.message)); return; }
     if (!data.user?.user_metadata?.profile_complete) { router.replace("/sign-up?step=profile"); return; }  // never finished sign-up
+    // Accounts with an authenticator app (staff) also need its code before the password can change.
+    const { data: aal } = await createClient().auth.mfa.getAuthenticatorAssuranceLevel();
+    setStep(aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2" ? "authenticator" : "password");
+  }
+
+  async function checkAuthenticator(e: React.FormEvent) {
+    e.preventDefault();
+    const c = totp.replace(/\D/g, "");
+    if (c.length !== 6) { setError("Enter the 6-digit code from your authenticator app."); return; }
+    setError(null); setBusy(true);
+    const supabase = createClient();
+    const { data: factors } = await supabase.auth.mfa.listFactors();
+    const factor = factors?.totp?.[0];
+    const { error } = factor ? await supabase.auth.mfa.challengeAndVerify({ factorId: factor.id, code: c }) : { error: new Error("no factor") };
+    setBusy(false);
+    if (error) { setError("That code didn’t work. Codes change every 30 seconds; try the current one."); return; }
     setStep("password");
   }
 
@@ -61,7 +78,13 @@ export function ResetFlow() {
     const { error } = await createClient().auth.updateUser({ password: pass });
     setBusy(false);
     if (error) {
-      setError(/same|different/i.test(error.message) ? "That’s your current password. Choose a new one, or just carry on to Doova." : friendlyAuthError(error.message));
+      const m = error.message;
+      const code = (error as { code?: string }).code ?? "";
+      if (/same|different/i.test(m) || code === "same_password") setError("That’s your current password. Choose a new one, or just carry on to Doova.");
+      else if (code === "insufficient_aal" || /aal2|mfa/i.test(m)) { setError(null); setStep("authenticator"); }
+      else if (code === "weak_password" || /weak|should contain|at least/i.test(m)) setError(`Supabase says that password is too weak: ${m.replace(/^.*?:\s*/, "")} Try a longer one with letters and numbers.`);
+      else if (code === "reauthentication_needed" || /reauthenticat/i.test(m)) setError("For safety, please start again: reload this page and get a new code.");
+      else setError(`${friendlyAuthError(m)} (${m})`);
       return;
     }
     router.replace("/tasks?reset=1");
@@ -108,6 +131,25 @@ export function ResetFlow() {
             : <button type="button" className="c-link" onClick={() => sendCode()}>Send a new code</button>}
           <button type="button" className="c-link" onClick={() => { setStep("phone"); setError(null); }}>Change number</button>
         </div>
+      </form>
+    );
+  }
+
+  if (step === "authenticator") {
+    return (
+      <form onSubmit={checkAuthenticator} style={{ display: "flex", flexDirection: "column", gap: 22 }} noValidate>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <h1 className="c-title">One more check</h1>
+          <p className="c-sub">Your account has an authenticator app (used for Doova admin). Enter the 6-digit code it shows to change your password.</p>
+        </div>
+        <div className="c-field">
+          <label className="c-label" htmlFor="fp-totp">Code from your authenticator app</label>
+          <input id="fp-totp" className="c-input" inputMode="numeric" autoComplete="one-time-code" maxLength={7} placeholder="000 000"
+            style={{ letterSpacing: "0.2em" }} value={totp} onChange={(e) => setTotp(e.target.value)} />
+        </div>
+        {error && <p className="c-error" role="alert">{error}</p>}
+        <button className="c-btn c-btn-primary c-btn-block" disabled={busy}>{busy ? "Checking…" : "Continue"}</button>
+        <p className="c-small" style={{ margin: 0 }}>Lost your authenticator? Ask another Doova owner to help, or contact support.</p>
       </form>
     );
   }

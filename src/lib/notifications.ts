@@ -8,7 +8,8 @@ const n = (k: number | null) => "₦" + Math.round((k ?? 0) / 100).toLocaleStrin
 
 export function describe(x: Pick<Note, "kind" | "title" | "body" | "amount_kobo" | "count">): { heading: string; detail: string; tone: "money" | "bad" | "info" } {
   switch (x.kind) {
-    case "paid": return { heading: `You've been paid ${n(x.amount_kobo)}`, detail: x.body ? `${x.title}. ${x.body}` : x.title, tone: "money" };
+    case "paid": if (x.amount_kobo === 0) return { heading: "Your work was approved", detail: `${x.title}. You earned XP.`, tone: "money" };
+      return { heading: `You've been paid ${n(x.amount_kobo)}`, detail: x.body ? `${x.title}. ${x.body}` : x.title, tone: "money" };
     case "rejected": return { heading: "Your work wasn't approved", detail: x.body ? `${x.title}: “${x.body}” You can appeal.` : `${x.title}. You can appeal.`, tone: "bad" };
     case "appeal_kept": return { heading: "Doova kept the rejection", detail: x.body ? `${x.title}: “${x.body}”` : x.title, tone: "bad" };
     case "review_waiting": return { heading: x.count > 1 ? `${x.count} responses to review` : "A response to review", detail: x.title, tone: "info" };
@@ -18,8 +19,8 @@ export function describe(x: Pick<Note, "kind" | "title" | "body" | "amount_kobo"
     case "payout_sent": return { heading: `${n(x.amount_kobo)} sent to your bank`, detail: "It usually arrives within minutes.", tone: "money" };
     case "payout_failed": return { heading: "Your withdrawal didn't go through", detail: `${n(x.amount_kobo)} is back in your balance.${x.body ? ` Bank said: ${x.body}` : ""}`, tone: "bad" };
     case "new_task": return x.count > 1
-      ? { heading: `${x.count} new tasks for you`, detail: `Latest: ${x.title}, ${n(x.amount_kobo)}`, tone: "info" }
-      : { heading: `New task: ${n(x.amount_kobo)}`, detail: x.title, tone: "info" };
+      ? { heading: `${x.count} new tasks for you`, detail: `Latest: ${x.title}, ${x.amount_kobo === 0 ? "earns XP" : n(x.amount_kobo)}`, tone: "info" }
+      : { heading: x.amount_kobo === 0 ? "New task: earns XP" : `New task: ${n(x.amount_kobo)}`, detail: x.title, tone: "info" };
     default: return { heading: x.title, detail: x.body ?? "", tone: "info" };
   }
 }

@@ -8,7 +8,7 @@ export function AdminNav({ groups }: { groups: { label: string; items: Item[] }[
   const current = (href: string) => (href === "/admin" ? path === "/admin" : path === href || path.startsWith(href + "/"));
   return (
     <nav className="ops-nav" aria-label="Admin">
-      {groups.map((g) => (
+      {groups.filter((g) => g.items.length > 0).map((g) => (
         <div key={g.label} style={{ display: "contents" }}>
           <span className="ops-nav-label">{g.label}</span>
           {g.items.map((i) => (

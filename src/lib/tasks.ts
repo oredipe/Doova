@@ -48,6 +48,7 @@ export type TaskForDoer = {
   creator_type: "user" | "org";
   creator_id: string;
   form_schema: FormSchema | null;
+  is_doova: boolean;
 };
 
 export async function loadTask(id: string): Promise<TaskForDoer | null> {
@@ -55,7 +56,7 @@ export async function loadTask(id: string): Promise<TaskForDoer | null> {
   const db = createAdminClient();
   const { data } = await db
     .from("tasks")
-    .select("id, title, instructions, kind, status, reward_kobo, slots, estimated_minutes, attempt_minutes, auto_approve_hours, review_mode, needs_laptop, requires_nda, ends_at, went_live_at, creator_type, creator_id, form_schema")
+    .select("id, title, instructions, kind, status, reward_kobo, slots, estimated_minutes, attempt_minutes, auto_approve_hours, review_mode, needs_laptop, requires_nda, ends_at, went_live_at, creator_type, creator_id, form_schema, is_doova")
     .eq("id", id)
     .maybeSingle();
   return (data as TaskForDoer) ?? null;

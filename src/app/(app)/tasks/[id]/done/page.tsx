@@ -27,6 +27,9 @@ export default async function DonePage({ params, searchParams }: { params: Promi
   if (sub.status === "reserved") redirect(`/tasks/${id}/do`);
 
   const creator = await creatorSummary(task);
+  const unpaid = task.reward_kobo === 0;
+  // what the doer stands to get: money, or XP for Doova's unpaid tasks
+  const prize = unpaid ? "XP" : naira(task.reward_kobo);
   const actions = (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <ScrollToTop />
@@ -53,10 +56,10 @@ export default async function DonePage({ params, searchParams }: { params: Promi
     return (
       <>
         <section className="paid-head" aria-live="polite">
-          <span style={{ fontWeight: 650 }}>Paid</span>
-          <span className="paid-amount">+{naira(task.reward_kobo)}</span>
+          <span style={{ fontWeight: 650 }}>{unpaid ? "Approved" : "Paid"}</span>
+          <span className="paid-amount">{unpaid ? `+${gained} XP` : `+${naira(task.reward_kobo)}`}</span>
           <span style={{ fontSize: 16, lineHeight: 1.5 }}>
-            {appeal?.status === "upheld_for_doer" ? "Doova staff agreed with your appeal." : sub.auto_approved ? "Your answers passed the checks." : `${creator.name} approved your work.`} The money is in your Earnings now.
+            {appeal?.status === "upheld_for_doer" ? "Doova staff agreed with your appeal." : sub.auto_approved ? "Your answers passed the checks." : `${creator.name} approved your work.`} {unpaid ? "Thanks for helping test Doova. The XP counts towards your next level." : "The money is in your Earnings now."}
           </span>
         </section>
 
@@ -102,10 +105,10 @@ export default async function DonePage({ params, searchParams }: { params: Promi
           <span className="empty-art" style={{ marginBottom: 0 }}><Icon name="clock" size={30} /></span>
           <h1 className="c-h1">Appeal sent</h1>
           <p className="c-sub" style={{ color: "var(--c-ink)" }}>
-            Doova staff, not the creator, will look at your work, the creator&rsquo;s reason and your appeal, and decide within 24 hours.
-            If they agree with you, your {naira(task.reward_kobo)} is paid straight away.
+            {task.is_doova ? "A different Doova staff member" : "Doova staff, not the creator,"} will look at your work, the creator&rsquo;s reason and your appeal, and decide within 24 hours.
+            If they agree with you, {unpaid ? "it's approved and you get your XP" : `your ${prize} is paid`} straight away.
           </p>
-          <span className="c-pill c-pill-paid" style={{ alignSelf: "flex-start" }}><Icon name="lock" size={12} stroke={2.2} /> {naira(task.reward_kobo)} stays locked until then</span>
+          {!unpaid && <span className="c-pill c-pill-paid" style={{ alignSelf: "flex-start" }}><Icon name="lock" size={12} stroke={2.2} /> {prize} stays locked until then</span>}
         </section>
         {actions}
       </>
@@ -120,9 +123,9 @@ export default async function DonePage({ params, searchParams }: { params: Promi
           <span className="empty-art" style={{ marginBottom: 0 }}><Icon name="clock" size={30} /></span>
           <h1 className="c-h1">Submitted. Waiting for review.</h1>
           <p className="c-sub" style={{ color: "var(--c-ink)" }}>
-            {creator.name} checks this work. If they don&rsquo;t decide by <strong>{when(due)}</strong>, it&rsquo;s approved and your {naira(task.reward_kobo)} is paid automatically.
+            {creator.name} checks this work. If they don&rsquo;t decide by <strong>{when(due)}</strong>, it&rsquo;s approved {unpaid ? "automatically and you get your XP" : <>and your {prize} is paid automatically</>}.
           </p>
-          <span className="c-pill c-pill-paid" style={{ alignSelf: "flex-start" }}><Icon name="lock" size={12} stroke={2.2} /> {naira(task.reward_kobo)} is locked for you</span>
+          {!unpaid && <span className="c-pill c-pill-paid" style={{ alignSelf: "flex-start" }}><Icon name="lock" size={12} stroke={2.2} /> {prize} is locked for you</span>}
         </section>
         {actions}
       </>
@@ -135,7 +138,7 @@ export default async function DonePage({ params, searchParams }: { params: Promi
       <>
         <section className="c-card" style={{ display: "flex", flexDirection: "column", gap: 12, padding: 28 }}>
           <h1 className="c-h1">Not approved</h1>
-          <p className="c-sub">The creator gave this reason:</p>
+          <p className="c-sub">{task.is_doova ? "Doova" : "The creator"} gave this reason:</p>
           <p style={{ margin: 0, background: "var(--c-ground)", borderRadius: 12, padding: "12px 14px", lineHeight: 1.5 }}>&ldquo;{sub.reject_reason}&rdquo;</p>
           {decided?.status === "upheld_for_creator" && (
             <>
@@ -149,7 +152,7 @@ export default async function DonePage({ params, searchParams }: { params: Promi
           <form action={appealRejection.bind(null, id)} className="c-card" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <h2 className="c-h2">Think this is unfair?</h2>
             <p className="c-sub" style={{ margin: 0 }}>
-              You can appeal once, until {when(sub.appeal_deadline)}. Doova staff decide within 24 hours. The {naira(task.reward_kobo)} stays locked until they do.
+              You can appeal once, until {when(sub.appeal_deadline)}. Doova staff decide within 24 hours.{unpaid ? "" : ` The ${prize} stays locked until they do.`}
             </p>
             <label className="c-field">
               <span className="c-label">Why should this work be approved?</span>

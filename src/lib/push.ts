@@ -16,17 +16,22 @@ export async function vapidKeys() {
     return (cached = { publicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY, privateKey: process.env.VAPID_PRIVATE_KEY });
   }
   const db = createAdminClient();
-  const read = async () => {
-    const { data } = await db.from("app_secrets").select("key, value").in("key", ["vapid_public", "vapid_private"]);
+  // Each read is a different request (limit n): Next.js reuses identical reads within one render,
+  // so re-reading the same query after saving would just return the first, empty answer again.
+  const read = async (n: number) => {
+    const { data, error } = await db.from("app_secrets").select("key, value").in("key", ["vapid_public", "vapid_private"]).limit(n);
+    if (error) console.error("push keys: read failed", error.message);
     const m = Object.fromEntries((data ?? []).map((r) => [r.key as string, r.value as string]));
     return m.vapid_public && m.vapid_private ? { publicKey: m.vapid_public, privateKey: m.vapid_private } : null;
   };
-  let keys = await read();
+  let keys = await read(2);
   if (!keys) {
     const k = webpush.generateVAPIDKeys();
     // two writers racing: the first insert wins, everyone re-reads the winner
-    await db.from("app_secrets").upsert([{ key: "vapid_public", value: k.publicKey }, { key: "vapid_private", value: k.privateKey }], { onConflict: "key", ignoreDuplicates: true });
-    keys = await read();
+    const { error } = await db.from("app_secrets").upsert([{ key: "vapid_public", value: k.publicKey }, { key: "vapid_private", value: k.privateKey }], { onConflict: "key", ignoreDuplicates: true });
+    if (error) console.error("push keys: save failed", error.message);
+    // the other writer's insert may not be visible yet; give it a moment
+    for (let i = 0; i < 5 && !(keys = await read(3 + i)); i++) await new Promise((r) => setTimeout(r, 150 * (i + 1)));
   }
   if (!keys) throw new Error("Couldn't set up push keys");
   return (cached = keys);

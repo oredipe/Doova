@@ -15,6 +15,7 @@ $P -f tests/admin_test.sql 2>&1 | grep -E "PASSED|ERROR"
 $P -f tests/bank_test.sql 2>&1 | grep -E "PASSED|ERROR"
 $P -f tests/staff_separation_test.sql 2>&1 | grep -E "PASSED|ERROR"
 $P -f tests/notifications_test.sql 2>&1 | grep -E "PASSED|ERROR"
+$P -f tests/doova_tasks_test.sql 2>&1 | grep -E "PASSED|ERROR"
 # fresh schema again for the race test
 $P -c "drop schema public cascade; create schema public;" >/dev/null
 for f in migrations/*.sql; do $P -f "$f" >/dev/null; done

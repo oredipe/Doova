@@ -1,8 +1,10 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/supabase/server";
 import type { Answers, FormSchema } from "@/lib/tasks";
+import { can, getStaffRow } from "@/lib/staff";
 
 // Every approved answer to a creator's task, as a spreadsheet (CSV). Doers appear by number only.
+// Doova's own tasks: staff who can review them (signed in with the authenticator step).
 
 const cell = (v: unknown) => {
   const s = Array.isArray(v) ? v.join("; ") : v == null ? "" : String(v);
@@ -16,8 +18,13 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   if (!user) return new Response("Sign in first", { status: 401 });
   if (!/^[0-9a-f-]{36}$/i.test(id)) return new Response("Not found", { status: 404 });
   const db = createAdminClient();
-  const { data: t } = await db.from("tasks").select("title, form_schema, creator_type, creator_id").eq("id", id).maybeSingle();
-  if (!t || t.creator_type !== "user" || t.creator_id !== user.id) return new Response("Not found", { status: 404 });
+  const { data: t } = await db.from("tasks").select("title, form_schema, creator_type, creator_id, is_doova").eq("id", id).maybeSingle();
+  if (!t) return new Response("Not found", { status: 404 });
+  const own = t.creator_type === "user" && t.creator_id === user.id;
+  if (!own) {
+    const row = t.is_doova ? await getStaffRow() : null;
+    if (!row?.staff || row.user.aal !== "aal2" || !can(row.staff.role, "task.moderate")) return new Response("Not found", { status: 404 });
+  }
 
   const { data: subs } = await db.from("submissions").select("submitted_at, answers").eq("task_id", id).eq("status", "approved")
     .order("submitted_at", { ascending: true }).limit(10000);

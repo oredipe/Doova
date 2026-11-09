@@ -2,10 +2,13 @@
 import { useState, useTransition } from "react";
 import { Icon } from "@/components/Icon";
 import type { Question } from "@/lib/tasks";
-import { createTask, type Draft } from "./actions";
+import { checkDraft, CREATOR_RULES, DOOVA_RULES, type Draft } from "@/lib/taskDraft";
+import { createTask } from "./actions";
 
 // Post a task in 4 steps (3 Nov): what kind; title, instructions and questions;
 // time, reward, slots and checking; review the cost. Saved unfunded, then funded on the next screen.
+// Doova mode (9 Nov, admin): Doova's own tasks. No minimum reward or slots, no fee, paid from the
+// Doova budget and live straight away. ₦0 tasks earn a little XP instead of money.
 
 type Kind = Draft["kind"];
 type Q = Question & { key: number };
@@ -108,7 +111,13 @@ function Chips<T extends number>({ values, value, onPick, fmt, label }: { values
   );
 }
 
-export function PostWizard({ maxSlots }: { maxSlots: number }) {
+type Submit = (d: Draft) => Promise<{ error?: string } | void>;
+
+export function PostWizard({ maxSlots: tierMax, doova, submit = createTask }: {
+  maxSlots: number; doova?: { budgetKobo: number; unpaidXp: number }; submit?: Submit;
+}) {
+  const maxSlots = doova ? DOOVA_RULES.maxSlots : tierMax;
+  const rules = doova ? DOOVA_RULES : { ...CREATOR_RULES, maxSlots };
   const [step, setStep] = useState(0);
   const [kind, setKind] = useState<Kind>("survey");
   const [title, setTitle] = useState("");
@@ -116,8 +125,8 @@ export function PostWizard({ maxSlots }: { maxSlots: number }) {
   const [questions, setQuestions] = useState<Q[]>(() => [newQ("single_choice")]);
   const [est, setEst] = useState(5);
   const [attempt, setAttempt] = useState(25);
-  const [reward, setReward] = useState(800);
-  const [slots, setSlots] = useState(Math.min(150, maxSlots));
+  const [reward, setReward] = useState(doova ? 0 : 800);
+  const [slots, setSlots] = useState(doova ? 100 : Math.min(150, maxSlots));
   const [reviewMode, setReviewMode] = useState<"auto" | "manual">("auto");
   const [hours, setHours] = useState(24);
   const [days, setDays] = useState(7);
@@ -125,7 +134,8 @@ export function PostWizard({ maxSlots }: { maxSlots: number }) {
   const [saving, start] = useTransition();
 
   const rewardsKobo = reward * 100 * slots;
-  const feeK = fee(rewardsKobo);
+  const feeK = doova ? 0 : fee(rewardsKobo);
+  const short = doova ? Math.max(0, rewardsKobo - doova.budgetKobo) : 0;
   const minAttempt = Math.max(15, 2 * est);
 
   function stepError(s: number): string | null {
@@ -140,8 +150,8 @@ export function PostWizard({ maxSlots }: { maxSlots: number }) {
     if (s === 2) {
       if (!(est >= 1 && est <= 180)) return "The task should take 1 to 180 minutes.";
       if (attempt < minAttempt) return `Give people at least ${minAttempt} minutes to finish.`;
-      if (!(reward >= 500 && reward <= 500000)) return "The reward must be ₦500 to ₦500,000.";
-      if (!(slots >= 5 && slots <= maxSlots)) return `Choose 5 to ${maxSlots.toLocaleString("en-NG")} slots.`;
+      if (!(reward >= rules.minReward && reward <= rules.maxReward)) return `The reward must be ${naira(rules.minReward)} to ${naira(rules.maxReward)}.`;
+      if (!(slots >= rules.minSlots && slots <= maxSlots)) return `Choose ${rules.minSlots} to ${maxSlots.toLocaleString("en-NG")} slots.`;
     }
     return null;
   }
@@ -152,12 +162,16 @@ export function PostWizard({ maxSlots }: { maxSlots: number }) {
   }
   function save() {
     setError(null);
+    const draft: Draft = {
+      kind, title, instructions, estimatedMinutes: est, attemptMinutes: attempt, rewardNaira: reward, slots,
+      reviewMode, reviewHours: hours, closesInDays: days,
+      questions: questions.map((q) => ({ ...q, options: q.options?.filter((o) => o.trim()) })),
+    };
+    const c = checkDraft(draft, rules);
+    if (c.error !== undefined) { setError(c.error); return; }
+    if (short > 0) { setError(`The Doova budget is ${naira(short / 100)} short. Top it up first.`); return; }
     start(async () => {
-      const res = await createTask({
-        kind, title, instructions, estimatedMinutes: est, attemptMinutes: attempt, rewardNaira: reward, slots,
-        reviewMode, reviewHours: hours, closesInDays: days,
-        questions: questions.map((q) => ({ ...q, options: q.options?.filter((o) => o.trim()) })),
-      });
+      const res = await submit(draft);
       if (res?.error) setError(res.error);
     });
   }
@@ -171,7 +185,7 @@ export function PostWizard({ maxSlots }: { maxSlots: number }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }} aria-hidden="true">
           {STEPS.map((s, i) => <span key={s} style={{ height: 6, borderRadius: 999, background: i <= step ? "var(--c-violet)" : "var(--c-line)" }} />)}
         </div>
-        <h1 className="c-title">{["What kind of task?", "Title, instructions and questions", "Time, reward and slots", "Check and fund"][step]}</h1>
+        <h1 className="c-title">{["What kind of task?", "Title, instructions and questions", "Time, reward and slots", doova ? "Check and launch" : "Check and fund"][step]}</h1>
       </div>
 
       {step === 0 && (
@@ -231,19 +245,20 @@ export function PostWizard({ maxSlots }: { maxSlots: number }) {
             <label className="c-label" htmlFor="t-est">How many minutes does it take?</label>
             <input id="t-est" className="c-input" type="number" min={1} max={180} value={est}
               onChange={(e) => { const v = Number(e.target.value); setEst(v); setAttempt(Math.max(15, 5 * v)); }} />
-            <span className="c-small">Be honest: people rate creators on this. We give each person {Math.max(15, 5 * est)} minutes to finish (you can change it below).</span>
+            <span className="c-small">{doova ? "Be honest: people plan around this." : "Be honest: people rate creators on this."} We give each person {Math.max(15, 5 * est)} minutes to finish (you can change it below).</span>
           </div>
           <div className="c-field">
             <span className="c-label">Reward for each person</span>
-            <Chips label="Suggested rewards" values={[500, 800, 1000, 1500]} value={reward} onPick={setReward} fmt={naira} />
-            <input className="c-input" type="number" min={500} max={500000} value={reward} aria-label="Reward in naira" onChange={(e) => setReward(Number(e.target.value))} />
+            <Chips label="Suggested rewards" values={doova ? [0, 200, 500, 1000] : [500, 800, 1000, 1500]} value={reward} onPick={setReward} fmt={(v) => (v === 0 ? "₦0 · XP only" : naira(v))} />
+            <input className="c-input" type="number" min={rules.minReward} max={rules.maxReward} value={reward} aria-label="Reward in naira" onChange={(e) => setReward(Number(e.target.value))} />
+            {doova && reward === 0 && <span className="c-small">Unpaid: each approved response earns {doova.unpaidXp} XP instead. Doers see &ldquo;Unpaid · earns XP&rdquo;.</span>}
             {levelFor(reward) > 1 && <span className="c-small">Rewards above {naira([0, 1500, 3000, 5000, 10000][levelFor(reward) - 1])} are seen by Level {levelFor(reward)} doers and up, so fewer people can take it.</span>}
           </div>
           <div className="c-field">
             <span className="c-label">How many people (slots)</span>
-            <Chips label="Suggested slots" values={[50, 150, 300, 1000].filter((v) => v <= maxSlots)} value={slots} onPick={setSlots} fmt={(v) => v.toLocaleString("en-NG")} />
-            <input className="c-input" type="number" min={5} max={maxSlots} value={slots} aria-label="Slots" onChange={(e) => setSlots(Number(e.target.value))} />
-            <span className="c-small">5 to {maxSlots.toLocaleString("en-NG")} for your tier.</span>
+            <Chips label="Suggested slots" values={(doova ? [10, 100, 500, 1000] : [50, 150, 300, 1000]).filter((v) => v <= maxSlots)} value={slots} onPick={setSlots} fmt={(v) => v.toLocaleString("en-NG")} />
+            <input className="c-input" type="number" min={rules.minSlots} max={maxSlots} value={slots} aria-label="Slots" onChange={(e) => setSlots(Number(e.target.value))} />
+            <span className="c-small">{rules.minSlots} to {maxSlots.toLocaleString("en-NG")}{doova ? "." : " for your tier."}</span>
           </div>
           <div className="c-field">
             <span className="c-label">Checking responses</span>
@@ -255,7 +270,7 @@ export function PostWizard({ maxSlots }: { maxSlots: number }) {
               </button>
               <button type="button" role="radio" className="c-radio" aria-checked={reviewMode === "manual"} onClick={() => setReviewMode("manual")}>
                 <span className="c-radio-dot" /><span style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <span style={{ fontWeight: 650 }}>I review every response</span>
+                  <span style={{ fontWeight: 650 }}>{doova ? "Staff review every response" : "I review every response"}</span>
                   <span className="c-small">You approve or reject each one with a reason.</span></span>
               </button>
             </div>
@@ -280,8 +295,19 @@ export function PostWizard({ maxSlots }: { maxSlots: number }) {
           <section className="c-card" style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             <span className="c-small">{KINDS.find((k) => k.kind === kind)?.title} · {questions.length} question{questions.length === 1 ? "" : "s"} · about {est} min</span>
             <strong style={{ fontSize: 18 }}>{title}</strong>
-            <span className="c-small">{reviewMode === "auto" ? "Paid automatically when checks pass" : "You review every response"} · closes in {days} days</span>
+            <span className="c-small">{reviewMode === "auto" ? "Paid automatically when checks pass" : doova ? "Staff review every response" : "You review every response"} · closes in {days} days</span>
           </section>
+          {doova ? (
+          <section className="c-card" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}><span className="c-sub">{slots.toLocaleString("en-NG")} × {reward === 0 ? "₦0 (earns XP)" : naira(reward)}</span><strong>{naira(rewardsKobo / 100)}</strong></div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}><span className="c-sub">Doova fee</span><strong>None</strong></div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderTop: "1px solid var(--c-line)", paddingTop: 10 }}>
+              <span style={{ fontWeight: 650 }}>From the Doova budget</span><span style={{ fontSize: 30, fontWeight: 700 }}>{naira(rewardsKobo / 100)}</span>
+            </div>
+            <span className="c-small">Budget now: {naira(doova.budgetKobo / 100)}. Rewards for unused slots and rejected work go back to the budget when the task closes.</span>
+            {short > 0 && <p className="c-error" role="alert">The budget is {naira(short / 100)} short. Top it up on the Doova tasks page first.</p>}
+          </section>
+          ) : (
           <section className="c-card" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}><span className="c-sub">{slots.toLocaleString("en-NG")} × {naira(reward)}</span><strong>{naira(rewardsKobo / 100)}</strong></div>
             <div style={{ display: "flex", justifyContent: "space-between" }}><span className="c-sub">Doova fee (15%)</span><strong>{naira(feeK / 100)}</strong></div>
@@ -290,7 +316,10 @@ export function PostWizard({ maxSlots }: { maxSlots: number }) {
             </div>
             <span className="c-small">Rewards for unfilled slots and rejected work come back to your wallet when the task closes. The fee isn&rsquo;t refunded for unused slots.</span>
           </section>
-          <div className="c-note"><Icon name="info" size={18} /><span>During the pilot, Doova checks every task before it goes live, usually within 4 hours.</span></div>
+          )}
+          <div className="c-note"><Icon name="info" size={18} /><span>{doova
+            ? "It goes live as soon as you launch it. Doers see it marked “From Doova”. Doova staff can’t take part."
+            : "During the pilot, Doova checks every task before it goes live, usually within 4 hours."}</span></div>
         </>
       )}
 
@@ -299,7 +328,7 @@ export function PostWizard({ maxSlots }: { maxSlots: number }) {
         {step > 0 && <button type="button" className="c-btn c-btn-quiet" onClick={() => { setError(null); setStep(step - 1); }}>Back</button>}
         {step < 3
           ? <button type="button" className="c-btn c-btn-primary" style={{ flex: 1 }} onClick={next}>Continue</button>
-          : <button type="button" className="c-btn c-btn-primary" style={{ flex: 1 }} onClick={save} disabled={saving}>{saving ? "Saving…" : "Save and fund"}</button>}
+          : <button type="button" className="c-btn c-btn-primary" style={{ flex: 1 }} onClick={save} disabled={saving}>{saving ? "Saving…" : doova ? "Launch task" : "Save and fund"}</button>}
       </div>
     </div>
   );

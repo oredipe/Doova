@@ -8,7 +8,7 @@ import { nowMs } from "@/lib/time";
 import { FLAG, loadOwnTask, shortName } from "@/lib/creator";
 import type { Answers } from "@/lib/tasks";
 import { approveResponse, rejectResponse } from "../../actions";
-import { ReasonPicker } from "./ReasonPicker";
+import { ReasonPicker } from "@/components/ReasonPicker";
 
 export const metadata: Metadata = { title: "Review a response" };
 

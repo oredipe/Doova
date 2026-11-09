@@ -52,7 +52,7 @@ export default async function MoneyCheck({ searchParams }: { searchParams: Promi
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <span className="c-small">What Doova owes users (our records)</span>
             <strong style={{ fontSize: 34, letterSpacing: "-0.03em" }}>{naira(owed)}</strong>
-            <span className="c-small">Plus Doova&rsquo;s own fees not yet moved: {naira(doovaNet)}</span>
+            <span className="c-small">Plus Doova&rsquo;s own fees not yet moved: {naira(doovaNet)}{v("doova_budget") ? ` · Doova tasks budget: ${naira(v("doova_budget"))}` : ""}</span>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <span className="c-small">Our records of what the partners hold</span>
@@ -105,6 +105,7 @@ export default async function MoneyCheck({ searchParams }: { searchParams: Promi
               <div className="ops-kv"><span>Fees earned</span><span>{naira(v("platform_revenue"))}</span></div>
               <div className="ops-kv"><span>Partner fees we paid</span><span>{v("processor_fees") ? "−" : ""}{naira(v("processor_fees"))}</span></div>
               <div className="ops-kv"><span style={{ color: "var(--c-ink)", fontWeight: 600 }}>Not yet moved to Doova&rsquo;s account</span><span>{naira(doovaNet)}</span></div>
+              <div className="ops-kv"><span><Link href="/admin/doova">Doova tasks budget</Link></span><span>{naira(v("doova_budget"))}</span></div>
               <p className="c-small" style={{ marginTop: 10 }}>Moving fees to Doova&rsquo;s own account arrives with the Paystack connection. Only final fees can move, never money still locked.</p>
             </section>
           </div>

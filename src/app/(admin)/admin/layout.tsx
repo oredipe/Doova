@@ -14,11 +14,15 @@ export const metadata = { title: { default: "Admin", template: "%s · Doova admi
 async function Side() {
   const me = await requireStaff();
   const db = createAdminClient();
-  const [tasks, appeals, payouts] = await Promise.all([
+  const [tasks, appeals, payouts, doova] = await Promise.all([
     db.from("tasks").select("id", { count: "exact", head: true }).eq("status", "under_moderation"),
     db.from("appeals").select("id", { count: "exact", head: true }).eq("status", "open"),
     db.from("payouts").select("id", { count: "exact", head: true }).eq("status", "failed").is("completed_at", null),
+    db.from("submissions").select("id, tasks!inner(is_doova)", { count: "exact", head: true }).eq("status", "submitted").eq("tasks.is_doova", true),
   ]);
+  const create = [
+    can(me.role, "task.moderate") && { href: "/admin/doova", label: "Doova tasks", count: doova.count ?? 0 },
+  ].filter(Boolean) as { href: string; label: string; count?: number }[];
   const queues = [
     can(me.role, "task.moderate") && { href: "/admin/tasks", label: "Task approvals", count: tasks.count ?? 0 },
     can(me.role, "appeal.decide") && { href: "/admin/disputes", label: "Disputes", count: appeals.count ?? 0 },
@@ -31,7 +35,7 @@ async function Side() {
   ].filter(Boolean) as { href: string; label: string }[];
   return (
     <>
-      <AdminNav groups={[{ label: "Today", items: [{ href: "/admin", label: "Overview" }] }, { label: "Queues", items: queues }, { label: "Records", items: records }]} />
+      <AdminNav groups={[{ label: "Today", items: [{ href: "/admin", label: "Overview" }] }, { label: "Queues", items: queues }, { label: "Create", items: create }, { label: "Records", items: records }]} />
       <div className="ops-me">
         <span style={{ width: 40, height: 40, borderRadius: 999, background: "var(--c-paid-soft)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flex: "none" }}>
           {initialsOf(me.name)}

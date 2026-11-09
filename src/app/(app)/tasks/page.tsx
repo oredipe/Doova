@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Tasks" };
 
 type FeedTask = {
   id: string; title: string; reward_kobo: number; slots_left: number; estimated_minutes: number;
-  kind: string; needs_laptop: boolean; creator_name: string; ends_at: string;
+  kind: string; needs_laptop: boolean; creator_name: string; ends_at: string; is_doova: boolean;
 };
 
 const LEVEL_NAMES = ["", "Starter", "Regular", "Skilled", "Pro", "Expert"];
@@ -28,7 +28,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
   const minePromise = db.from("submissions").select("task_id, status").eq("doer_id", me.id);
   const { data, error } = await db
     .from("v_task_feed")
-    .select("id, title, reward_kobo, slots_left, estimated_minutes, kind, needs_laptop, creator_name, ends_at")
+    .select("id, title, reward_kobo, slots_left, estimated_minutes, kind, needs_laptop, creator_name, ends_at, is_doova")
     .gt("slots_left", 0)
     .order("went_live_at", { ascending: false })
     .limit(50);
@@ -43,7 +43,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
   const next = Math.min(me.level + 1, 5);
   const pct = me.level >= 5 ? 100 : Math.min(100, Math.round(((me.xp - LEVEL_XP[me.level]) / (LEVEL_XP[next] - LEVEL_XP[me.level])) * 100));
   const first = me.full_name?.split(" ")[0] ?? "there";
-  const keys = await vapidKeys().catch(() => null);
+  const keys = await vapidKeys().catch((e) => { console.error("push keys:", e instanceof Error ? e.message : e); return null; });
 
   return (
     <>
@@ -94,14 +94,20 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
           {tasks.map((t) => (
             <Link key={t.id} href={`/tasks/${t.id}`} className="c-row">
               <div className="c-row-main">
-                <span className="c-small">{t.creator_name}</span>
+                {t.is_doova
+                  ? <span className="c-pill c-pill-active" style={{ alignSelf: "flex-start" }}><Icon name="spark" size={12} stroke={2.2} /> From Doova</span>
+                  : <span className="c-small">{t.creator_name}</span>}
                 <span className="c-row-title">{t.title}</span>
                 <span className="c-small">
                   About {t.estimated_minutes} min · {t.slots_left} slots left{t.needs_laptop ? " · Laptop" : ""}
                 </span>
                 {STATUS_PILL[myStatus.get(t.id) ?? ""] ? (
                   <span className={STATUS_PILL[myStatus.get(t.id)!][0]} style={{ alignSelf: "flex-start", marginTop: 4 }}>
-                    {STATUS_PILL[myStatus.get(t.id)!][1]}
+                    {t.reward_kobo === 0 && myStatus.get(t.id) === "approved" ? "Done" : STATUS_PILL[myStatus.get(t.id)!][1]}
+                  </span>
+                ) : t.reward_kobo === 0 ? (
+                  <span className="c-pill c-pill-quiet" style={{ alignSelf: "flex-start", marginTop: 4 }}>
+                    <Icon name="spark" size={12} stroke={2.2} /> Unpaid · earns XP
                   </span>
                 ) : (
                   <span className="c-pill c-pill-paid" style={{ alignSelf: "flex-start", marginTop: 4 }}>
@@ -109,7 +115,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
                   </span>
                 )}
               </div>
-              <span className="c-amt">{naira(t.reward_kobo)}</span>
+              <span className="c-amt">{t.reward_kobo === 0 ? "XP" : naira(t.reward_kobo)}</span>
             </Link>
           ))}
         </div>

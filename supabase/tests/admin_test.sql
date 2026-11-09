@@ -117,7 +117,7 @@ begin
          coalesce(sum(balance_kobo) filter (where bucket = 'platform_revenue'), 0),
          coalesce(sum(balance_kobo) filter (where bucket = 'processor_fees'), 0)
     into owed, held, income, expense from v_money_totals;
-  assert held + expense = owed + income, format('held %s + exp %s <> owed %s + income %s', held, expense, owed, income);
+  assert held + expense = owed + income + coalesce((select balance_kobo from v_money_totals where bucket = 'doova_budget'), 0), format('held %s + exp %s <> owed %s + income %s', held, expense, owed, income);
   assert (select balance_kobo from v_money_totals where bucket = 'creator_funds') > 0;
 end $$;
 

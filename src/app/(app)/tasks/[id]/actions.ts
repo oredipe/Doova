@@ -9,6 +9,7 @@ import { kickPush } from "@/lib/push";
 export async function startTask(taskId: string) {
   kickPush();
   const me = await requireProfile();
+  if (!me.phone) redirect(`/tasks/${taskId}?error=${encodeURIComponent("Add your phone number before doing tasks.")}`);
   const db = createAdminClient();
   const { error } = await db.rpc("reserve_slot", { p_task: taskId, p_doer: me.id });
   if (error) redirect(`/tasks/${taskId}?error=${encodeURIComponent(friendlyTaskError(error.message))}`);

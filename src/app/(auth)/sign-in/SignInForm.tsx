@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { maskPhone } from "@/lib/phone";
 import { maskEmail, readContact, type Contact } from "@/lib/contact";
-import { friendlyAuthError, TEXTS_PAUSED } from "@/lib/auth-errors";
+import { friendlyAuthError, smsFailed, TEXTS_PAUSED } from "@/lib/auth-errors";
 import { CodeInput } from "@/components/CodeInput";
 import { Icon } from "@/components/Icon";
 
@@ -53,13 +53,12 @@ export function SignInForm({ next, smsOn }: { next: string; smsOn: boolean }) {
     setError(null);
     const c = readId();
     if (!c) return;
-    if (c.kind === "phone" && !smsOn) { setError(TEXTS_PAUSED); return; }
     setBusy(true);
     const { error } = c.kind === "phone"
       ? await createClient().auth.signInWithOtp({ phone: c.value, options: { shouldCreateUser: false } })
       : await createClient().auth.signInWithOtp({ email: c.value, options: { shouldCreateUser: false } });
     setBusy(false);
-    if (error) { setError(friendlyAuthError(error.message, c.kind)); return; }
+    if (error) { setError(c.kind === "phone" && !smsOn && smsFailed(error.message) ? TEXTS_PAUSED : friendlyAuthError(error.message, c.kind)); return; }
     setSentTo(c);
     setCode("");
     setMode("code-enter");
@@ -118,7 +117,7 @@ export function SignInForm({ next, smsOn }: { next: string; smsOn: boolean }) {
         <form onSubmit={askCode} style={{ display: "flex", flexDirection: "column", gap: 18 }} noValidate>
           {idField}
           <span className="c-small" style={{ marginTop: -8 }}>
-            {smsOn ? "We’ll text the code to your phone, or email it if you enter your email." : "Enter your email and we’ll email you a code."}
+            {smsOn ? "We’ll text the code to your phone, or email it if you enter your email." : "Enter the email on your account and we’ll email you a code."}
           </span>
           {error && <p className="c-error" role="alert">{error}</p>}
           <button className="c-btn c-btn-primary c-btn-block" disabled={busy}>{busy ? "Sending…" : "Send me a code"}</button>

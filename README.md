@@ -119,13 +119,16 @@ Failures show in Vercel's logs as `sms: …` (numbers are shortened), and people
 text right now"; a common cause is an empty Termii wallet.
 
 ### 4. Email codes (Resend)
-People can sign up, sign in and reset their password with a 6-digit code sent by email. While text
-codes are off (no Termii Sender ID yet) email is the only way to sign up; once they're on, sign-up
-offers both (doers start on phone, creators on email). Text codes count as on when `TERMII_API_KEY`
-and `TERMII_SENDER_ID` are both set in Vercel; `SMS_CODES=on` or `off` forces it.
+Doers always sign up with a phone number (one SIM, one doer: it keeps fake accounts off task slots).
+Creators can sign up by email (or by phone once text codes are on). Anyone can add an email in
+Settings → Sign-in details and then sign in or reset their password with a 6-digit code by email;
+the Tasks page nudges phone accounts to add one.
 
-Someone who signed up by email adds a phone number before their first withdrawal (only asked once
-text codes are on). The NIN check and "one bank account, one Doova account" apply either way.
+An account with no checked phone number can post tasks but can't do any (the database refuses), and
+adds a phone number before withdrawing once text codes are on. The NIN check and "one bank account,
+one Doova account" apply to everyone. Text codes count as on when `TERMII_API_KEY` and
+`TERMII_SENDER_ID` are both set in Vercel; `SMS_CODES=on` or `off` forces it (it changes wording and
+the withdrawal phone step; Supabase test phone numbers work either way).
 
 1. resend.com → add the domain `getdoova.com`, add the DNS records it shows in Cloudflare (DNS only),
    wait for "Verified", then create an API key.

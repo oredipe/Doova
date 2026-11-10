@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { maskPhone } from "@/lib/phone";
 import { maskEmail, readContact, type Contact } from "@/lib/contact";
-import { friendlyAuthError } from "@/lib/auth-errors";
+import { friendlyAuthError, smsFailed } from "@/lib/auth-errors";
 import { CodeInput } from "@/components/CodeInput";
 
 // Forgot password: prove it's your phone (text code) or your email (email code), then choose a new password.
@@ -36,16 +36,17 @@ export function ResetFlow({ smsOn }: { smsOn: boolean }) {
     setError(null);
     const c = sentTo && step === "code" ? sentTo : readContact(idText);
     if (!c) { setError(idText.includes("@") ? "That email doesn’t look right. Check it and try again." : "Enter your phone number, like 0803 123 4567, or your email."); return; }
-    if (c.kind === "phone" && !smsOn) {
-      setError("We can’t send text codes right now. If you added an email to your Doova account, enter it instead. If not, email hello@getdoova.com from any address and we’ll help you back in.");
-      return;
-    }
     setBusy(true);
     const { error } = c.kind === "phone"
       ? await createClient().auth.signInWithOtp({ phone: c.value, options: { shouldCreateUser: false } })
       : await createClient().auth.signInWithOtp({ email: c.value, options: { shouldCreateUser: false } });
     setBusy(false);
-    if (error) { setError(friendlyAuthError(error.message, c.kind)); return; }
+    if (error) {
+      setError(c.kind === "phone" && !smsOn && smsFailed(error.message)
+        ? "We can’t send text codes right now. If you added an email to your Doova account, enter it instead. If not, email hello@getdoova.com and we’ll help you back in."
+        : friendlyAuthError(error.message, c.kind));
+      return;
+    }
     setSentTo(c); setCode(""); setResendIn(45); setStep("code");
   }
 
@@ -106,15 +107,13 @@ export function ResetFlow({ smsOn }: { smsOn: boolean }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <h1 className="c-title">Forgot your password?</h1>
           <p className="c-sub">
-            {smsOn
-              ? "No problem. Enter the phone number or email on your Doova account and we’ll send you a code."
-              : "No problem. Enter the email on your Doova account and we’ll email you a code."}
+No problem. Enter the phone number or email on your Doova account and we&rsquo;ll send you a code.
           </p>
         </div>
         <div className="c-field">
-          <label className="c-label" htmlFor="fp-phone">{smsOn ? "Phone number or email" : "Email"}</label>
+          <label className="c-label" htmlFor="fp-phone">Phone number or email</label>
           <input id="fp-phone" className="c-input" autoComplete="username" autoCapitalize="none" spellCheck={false}
-            placeholder={smsOn ? "0803 000 0000 or ada@gmail.com" : "ada@gmail.com"}
+            placeholder="0803 000 0000 or ada@gmail.com"
             value={idText} onChange={(e) => setIdText(e.target.value)} aria-invalid={!!error || undefined} />
         </div>
         {error && <p className="c-error" role="alert">{error}</p>}

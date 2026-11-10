@@ -17,5 +17,10 @@ export function friendlyAuthError(message: string | undefined, via: "phone" | "e
   return "Something went wrong. Please try again.";
 }
 
-/** Shown when someone asks for a text code while texts are switched off. */
+/** Did Supabase fail to send the text (no provider, provider down, hook refused)? */
+export function smsFailed(message: string | undefined): boolean {
+  return /sms|phone provider|hook|unsupported phone/i.test(message ?? "");
+}
+
+/** Shown when a text code can't be sent while texts are switched off. */
 export const TEXTS_PAUSED = "We can’t send text codes right now. Enter your email instead if your account has one, or use your password.";

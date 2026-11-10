@@ -1,3 +1,5 @@
+import { getAuthUser } from "@/lib/supabase/server";
+import { EmailPrompt } from "@/components/EmailPrompt";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Icon } from "@/components/Icon";
@@ -60,6 +62,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
         </div>
       )}
       {keys && <PushPrompt publicKey={keys.publicKey} />}
+      {!(await getAuthUser())?.email && <EmailPrompt />}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 16 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <span className="c-small">{greeting()}</span>

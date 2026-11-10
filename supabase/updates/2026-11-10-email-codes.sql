@@ -1,8 +1,9 @@
--- Doova update, 10 Nov 2026: sign-up codes by email, one bank account per person.
+-- Doova update, 10 Nov 2026: codes by email, a phone number needed to do tasks, one bank account per person.
 -- Paste into a New query in the Supabase SQL editor and press Run. Safe to run more than once.
 
 -- 020_email_codes.sql
--- 10 Nov 2026. Email sign-up codes (alongside text codes), one bank account per person.
+-- 10 Nov 2026. Email codes (creators can sign up by email; anyone can reset by email), phone needed to do tasks,
+-- one bank account per person.
 -- * A Doova account now needs a phone number OR an email (admin-only staff need neither).
 -- * Sign-ups by email get their profile row like phone sign-ups do.
 -- * New-task alerts go to every finished account, not only ones with a phone number.
@@ -123,6 +124,20 @@ begin
   returning id into v_id;
   return v_id;
 end $$;
+
+-- Doing tasks needs a checked phone number (one SIM, one doer). Accounts made by email can post
+-- tasks straight away, and add a phone number before they do any.
+create or replace function submissions_need_phone() returns trigger
+language plpgsql as $$
+begin
+  if not exists (select 1 from users u where u.id = new.doer_id and u.phone is not null) then
+    raise exception 'add your phone number before doing tasks';
+  end if;
+  return new;
+end $$;
+drop trigger if exists submissions_need_phone on submissions;
+create trigger submissions_need_phone before insert on submissions
+  for each row execute function submissions_need_phone();
 
 revoke all on all functions in schema public from anon, authenticated, public;
 grant execute on all functions in schema public to service_role;

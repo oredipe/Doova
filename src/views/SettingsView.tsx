@@ -71,11 +71,11 @@ export async function SettingsView({ mode }: { mode: "earn" | "create" }) {
           <span style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "space-between", flexWrap: "wrap" }}>
             <span style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <strong style={{ fontSize: 15 }}>Phone number</strong>
-              <span className="c-small">{local ?? (smsOn ? "Not added yet. You need one before your first withdrawal." : "Not added yet. You can add one once text codes are switched on.")}</span>
+              <span className="c-small">{local ?? "Not added yet. You need one to do tasks and to withdraw."}</span>
             </span>
             {local && <span className="c-pill c-pill-paid">Checked</span>}
           </span>
-          {!local && smsOn && <details><summary className="c-link" style={{ cursor: "pointer" }}>Add my phone number</summary><div style={{ paddingTop: 12 }}><ConfirmContact kind="phone" /></div></details>}
+          {!local && <details><summary className="c-link" style={{ cursor: "pointer" }}>Add my phone number</summary><div style={{ paddingTop: 12 }}>{!smsOn && <p className="c-small" style={{ margin: "0 0 10px" }}>Text codes aren&rsquo;t switched on yet, so this may not work until they are.</p>}<ConfirmContact kind="phone" /></div></details>}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10, borderTop: "1px solid var(--c-line)", paddingTop: 16 }}>
           <span style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "space-between", flexWrap: "wrap" }}>

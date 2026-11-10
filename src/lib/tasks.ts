@@ -156,5 +156,6 @@ export function friendlyTaskError(message: string | undefined): string {
   if (m.includes("not accepting") || m.includes("outside its start")) return "This task has closed.";
   if (m.includes("time limit passed")) return "Time ran out on this task, so the slot was released.";
   if (m.includes("not active")) return "Your account is paused. Contact support.";
+  if (m.includes("add your phone number")) return "Add your phone number before doing tasks.";
   return "Something went wrong. Please try again.";
 }

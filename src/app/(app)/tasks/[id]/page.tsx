@@ -7,6 +7,7 @@ import { nowMs } from "@/lib/time";
 import { naira, requireProfile } from "@/lib/profile";
 import { creatorSummary, eligibility, loadTask, TIER_NAMES } from "@/lib/tasks";
 import { startTask } from "./actions";
+import { ConfirmContact } from "@/components/ConfirmContact";
 
 export const metadata: Metadata = { title: "Task" };
 
@@ -125,6 +126,12 @@ export default async function TaskPage({ params, searchParams }: { params: Promi
           <button className="c-btn c-btn-primary c-btn-block" disabled>This task has closed</button>
         ) : creator.slotsLeft <= 0 ? (
           <button className="c-btn c-btn-primary c-btn-block" disabled>All slots taken</button>
+        ) : !me.phone ? (
+          <section className="c-card" style={{ display: "flex", flexDirection: "column", gap: 12 }} aria-label="Add your phone number">
+            <strong style={{ fontSize: 17 }}>Add your phone number to do tasks</strong>
+            <p className="c-sub" style={{ margin: 0 }}>Each doer has one checked phone number. It keeps fake accounts from taking the slots. We&rsquo;ll text you a code.</p>
+            <ConfirmContact kind="phone" buttonLabel="Text me a code" />
+          </section>
         ) : (
           <form action={startTask.bind(null, id)}>
             <button className="c-btn c-btn-primary c-btn-block" disabled={!elig.ok}>Start task · {task.attempt_minutes} min to finish</button>

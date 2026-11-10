@@ -19,15 +19,16 @@ const ROLES: { mode: Mode; title: string; text: string }[] = [
 ];
 
 /**
- * Sign-up: choose earn or post → a code by text or email → name and password.
- * With texts on, doers start on phone and creators on email; either can switch. With texts off, email only.
+ * Sign-up: choose earn or post → a code → name and password.
+ * Doers always sign up with a phone number (one SIM, one doer: it keeps fake accounts off tasks).
+ * Creators sign up by email, or by phone if they prefer once text codes are on.
  */
 export function SignUpFlow({ startAt, smsOn }: { startAt: "start" | "profile"; smsOn: boolean }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>(startAt);
   const [mode, setMode] = useState<Mode>("earn");
   const [chosenVia, setChosenVia] = useState<Via | null>(null);
-  const via: Via = !smsOn ? "email" : chosenVia ?? (mode === "earn" ? "phone" : "email");
+  const via: Via = mode === "earn" ? "phone" : smsOn ? chosenVia ?? "email" : "email";
   const [phoneText, setPhoneText] = useState("");
   const [emailText, setEmailText] = useState("");
   const [sentTo, setSentTo] = useState<{ via: Via; value: string } | null>(null);
@@ -98,7 +99,7 @@ export function SignUpFlow({ startAt, smsOn }: { startAt: "start" | "profile"; s
             </button>
           ))}
         </div>
-        {smsOn && (
+        {smsOn && mode === "create" && (
           <div className="c-seg" role="radiogroup" aria-label="Get your code by">
             {(["phone", "email"] as const).map((v) => (
               <button key={v} type="button" role="radio" aria-checked={via === v} onClick={() => { setChosenVia(v); setError(null); }}>
@@ -116,6 +117,7 @@ export function SignUpFlow({ startAt, smsOn }: { startAt: "start" | "profile"; s
                 value={phoneText} onChange={(e) => setPhoneText(e.target.value)} aria-invalid={!!error || undefined}
                 aria-describedby={error ? "su-err" : undefined} />
             </div>
+            {!smsOn && <span className="c-small">Text codes aren&rsquo;t switched on yet, so sign-ups for earning open soon. Pilot testers can carry on.</span>}
           </div>
         ) : (
           <div className="c-field">
@@ -124,7 +126,7 @@ export function SignUpFlow({ startAt, smsOn }: { startAt: "start" | "profile"; s
               value={emailText} onChange={(e) => setEmailText(e.target.value)} aria-invalid={!!error || undefined}
               aria-describedby={error ? "su-err" : "su-email-hint"} />
             <span id="su-email-hint" className="c-small">
-              {smsOn || mode === "create" ? "We’ll email you a 6-digit code." : "We’ll email you a 6-digit code. You’ll add your phone number later, before your first withdrawal."}
+We&rsquo;ll email you a 6-digit code. To do tasks yourself later, you&rsquo;ll add a phone number.
             </span>
           </div>
         )}

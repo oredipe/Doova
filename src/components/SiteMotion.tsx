@@ -53,5 +53,32 @@ export function SiteMotion() {
       draws.forEach((el) => el.classList.remove("dd-draw", "rv-in"));
     };
   }, [path]);
+
+  // Home's glow hero (10 Nov): the light on the coin follows the mouse; tapping the coin shows another example payment.
+  useEffect(() => {
+    const hero = document.querySelector<HTMLElement>(".ws .hg");
+    if (!hero) return;
+    const JOBS: [string, number, number, number][] = [
+      ["Label 50 street food photos", 800, 40000, 50], ["Your mobile money habits", 500, 25000, 50],
+      ["Rate 5 snack advert ideas", 600, 24000, 40], ["Test a savings app sign-up", 1500, 45000, 30],
+    ];
+    const naira = (v: number) => "\u20A6" + v.toLocaleString("en-NG");
+    let i = 0;
+    const move = (e: MouseEvent) => {
+      const r = hero.getBoundingClientRect();
+      hero.style.setProperty("--mx", (((e.clientX - r.left) / r.width - 0.5) * 2).toFixed(3));
+    };
+    const set = (k: string, v: string) => { const el = hero.querySelector(`[data-hg="${k}"]`); if (el) el.textContent = v; };
+    const tap = () => {
+      i = (i + 1) % JOBS.length;
+      const [title, pay, total, people] = JOBS[i];
+      set("lockTitle", `${naira(total)} for ${people} people`); set("lockSub", title); set("paid", "+" + naira(pay)); set("paidFor", title);
+      hero.classList.remove("hg-tapped"); void hero.offsetWidth; hero.classList.add("hg-tapped");
+    };
+    const orb = hero.querySelector<HTMLButtonElement>("button.hg-orb");
+    hero.addEventListener("mousemove", move);
+    orb?.addEventListener("click", tap);
+    return () => { hero.removeEventListener("mousemove", move); orb?.removeEventListener("click", tap); };
+  }, [path]);
   return null;
 }

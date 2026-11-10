@@ -254,3 +254,77 @@
   .ws .btn { transition: scale 0.15s ease, background-color 0.2s ease, box-shadow 0.2s ease; }
   .ws .btn:active { scale: 0.97; }
 }
+
+/* ===== 10 Nov: header with centred links on every page; dark header and the glow hero on Home ===== */
+.ws .nav-logo { display: flex; align-items: center; }
+.ws .nav-end { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.ws .nav-dark.nav { background: rgba(13,13,12,0.86); border-bottom: 1px solid rgba(255,255,255,0.08); color: #FFFFFF; }
+@supports (animation-timeline: scroll()) { .ws .nav-dark.nav { animation-name: ws-nav-fill-dark; } }
+@keyframes ws-nav-fill-dark {
+  from { background-color: rgba(13,13,12,0); border-bottom-color: rgba(255,255,255,0); box-shadow: 0 0 0 rgba(0,0,0,0); -webkit-backdrop-filter: blur(0) saturate(1); backdrop-filter: blur(0) saturate(1); }
+  to { background-color: rgba(13,13,12,0.84); border-bottom-color: rgba(255,255,255,0.08); box-shadow: 0 10px 30px -18px rgba(0,0,0,0.7); -webkit-backdrop-filter: blur(14px) saturate(1.4); backdrop-filter: blur(14px) saturate(1.4); }
+}
+.ws .nav-dark .nav-link { color: #D3D3CD; }
+.ws .nav-dark .nav-link[aria-current="page"] { color: #FFFFFF; box-shadow: inset 0 -2px 0 #C6F24E; }
+.ws .nav-dark .menu > summary { color: #FFFFFF; box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.32); }
+.ws .menu-panel { color: #111111; }
+.ws .btn-ghost { background: transparent; color: #FFFFFF; box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.38); }
+
+/* glow hero: sits under the clear header, so the header's height is added to its top padding */
+.ws .hg { --mx: 0; position: relative; overflow: hidden; margin-top: -68px; padding-top: 68px; color: #FFFFFF; background: radial-gradient(120cqi 520px at 8% -8%, rgba(107,78,230,0.42), rgba(107,78,230,0) 62%), #0D0D0C; }
+.ws .hg::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.7; background-image: radial-gradient(#FFFFFF 0.7px, transparent 1px), radial-gradient(rgba(255,255,255,0.6) 0.6px, transparent 1px), radial-gradient(rgba(255,255,255,0.5) 0.8px, transparent 1.1px); background-size: 230px 190px, 170px 260px, 310px 240px; background-position: 30px 40px, 110px 90px, 200px 10px; }
+.ws .hg-in { position: relative; display: flex; flex-direction: column; }
+.ws .hg-copy { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 20px; padding-top: 40px; }
+.ws .hg .eyebrow { color: #C6F24E; margin: 0; }
+.ws .hg .h-hero { font-weight: 500; line-height: 1.04; letter-spacing: -0.035em; max-width: 15em; text-wrap: balance; }
+.ws .hg .lead { color: #C9C8C0; max-width: 34em; }
+.ws .hg-hint { font-size: 14px; color: #A5A49C; }
+.ws .hg-stage { position: relative; height: 440px; display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 28px; }
+.ws .hg-small .hg-stage { height: 200px; }
+.ws .hg-orbwrap { position: absolute; left: 50%; top: 214px; width: min(700px, 94%); aspect-ratio: 1; translate: calc(-50% + var(--mx) * 18px) 0; transition: translate 0.5s ease-out; z-index: 1; }
+.ws .hg-small .hg-orbwrap { top: 40px; }
+.ws .hg-orb { position: absolute; inset: 0; display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 46% 54% 50% 50% / 58% 60% 40% 42%;
+  background: radial-gradient(circle at calc(34% + var(--mx) * 16%) 16%, #FDFFE9 0%, #E4FB9A 7%, #C6F24E 24%, #8DB622 48%, #33470A 74%, #0B0F02 100%);
+  box-shadow: 0 0 140px 18px rgba(198,242,78,0.26), inset 12px 4px 26px -8px rgba(255,255,255,0.85), inset -18px 0 36px -10px rgba(107,78,230,0.95);
+  animation: ws-hg-morph 9s ease-in-out infinite; }
+.ws button.hg-orb { cursor: pointer; }
+.ws button.hg-orb:focus-visible { outline: 3px solid #FFFFFF; outline-offset: 6px; }
+@keyframes ws-hg-morph { 0%, 100% { border-radius: 46% 54% 50% 50% / 58% 60% 40% 42%; rotate: 0deg; } 33% { border-radius: 58% 42% 46% 54% / 50% 66% 34% 50%; rotate: 3deg; } 66% { border-radius: 42% 58% 54% 46% / 64% 52% 48% 36%; rotate: -3deg; } }
+.ws .hg-grin { position: absolute; left: 50%; top: 13%; width: 30%; translate: -50% 0; rotate: -12deg; pointer-events: none; }
+.ws .hg-glass { position: relative; z-index: 3; width: min(280px, 100%); background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-radius: 18px; padding: 14px 18px; display: flex; flex-direction: column; gap: 3px; text-align: left; }
+.ws .hg-label { font-size: 12px; color: #C9C8C0; display: flex; gap: 6px; align-items: center; }
+.ws .hg-big { font-size: 17px; line-height: 1.25; font-weight: 700; }
+.ws .hg-big.hg-lime { font-size: 28px; line-height: 1.1; color: #C6F24E; font-variant-numeric: tabular-nums; }
+.ws .hg-sub { font-size: 14px; color: #C9C8C0; }
+.ws .hg-tapped .hg-orbwrap { animation: ws-hg-squish 0.5s cubic-bezier(0.3,1.6,0.5,1); }
+.ws .hg-tapped .hg-glass { animation: ws-hg-pop 0.45s cubic-bezier(0.3,1.6,0.5,1); }
+@keyframes ws-hg-squish { 35% { scale: 1.05 0.93; } }
+@keyframes ws-hg-pop { from { scale: 0.92; opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .ws .hg-orb, .ws .hg-tapped .hg-orbwrap, .ws .hg-tapped .hg-glass { animation: none; } }
+@container (min-width: 900px) {
+  .ws .nav-in { display: grid; grid-template-columns: 1fr auto 1fr; }
+  .ws .nav-links { margin-left: 0; }
+  .ws .nav-end { margin-left: 0; justify-self: end; gap: 28px; }
+  .ws .hg { margin-top: -80px; padding-top: 80px; }
+  .ws .hg-copy { padding-top: 56px; }
+  .ws .hg .h-hero { font-size: clamp(52px, 5.4cqi, 76px); }
+  .ws .hg .lead { font-size: 19px; }
+  .ws .hg-stage { height: 400px; display: block; padding-top: 0; }
+  .ws .hg-small .hg-stage { height: 250px; }
+  .ws .hg-orbwrap { top: 34px; }
+  .ws .hg-small .hg-orbwrap { top: 60px; }
+  .ws .hg-glass { position: absolute; width: 260px; }
+  .ws .hg-glass.hg-l { left: 3%; top: 150px; }
+  .ws .hg-glass.hg-r { right: 3%; top: 214px; }
+}
+
+/* Home hero entrance (CSS only) */
+@media (prefers-reduced-motion: no-preference) {
+  .ws .hg-copy > * { animation: ws-rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  .ws .hg-copy > :nth-child(2) { animation-delay: 0.08s; }
+  .ws .hg-copy > :nth-child(3) { animation-delay: 0.16s; }
+  .ws .hg-copy > :nth-child(n+4) { animation-delay: 0.24s; }
+  .ws .hg-orbwrap { animation: ws-hg-rise 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) 0.2s both; }
+  .ws .hg-glass { animation: ws-pop 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) 0.8s both; }
+}
+@keyframes ws-hg-rise { from { opacity: 0; translate: -50% 80px; } }

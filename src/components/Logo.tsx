@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-/** The Doova lockup (all black on light grounds, 3 Nov logo decision). */
+/** The Doova lockup for light grounds (10 Nov: curled d, lime coin with a dark grin). */
 export function Logo({ href = "/", height = 24 }: { href?: string; height?: number }) {
   return (
     <Link href={href} aria-label="Doova home" style={{ display: "inline-flex" }}>

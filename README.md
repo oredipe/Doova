@@ -102,10 +102,21 @@ Pushes go out straight after app actions, and the database scheduler (pg_cron + 
 `/api/push/dispatch` every minute for anything else. When the domain changes, update `site_url` in
 `platform_settings`. On iPhone, push works once Doova is added to the home screen.
 
-### 3. Text messages (later)
-When the Termii account is ready: Supabase **Authentication → Hooks → Send SMS hook → HTTPS**,
-URL `https://YOUR-SITE/api/auth/sms-hook`. Put its secret in Vercel as `SUPABASE_SMS_HOOK_SECRET`,
-and add `TERMII_API_KEY` and `TERMII_SENDER_ID`. Then remove the test numbers.
+### 3. Text messages (Termii)
+Codes are sent by `/api/auth/sms-hook`: Supabase hands it each code, it sends the text through Termii
+(DND route, so it reaches numbers on Do-Not-Disturb). Switch on once Termii has approved a Sender ID
+(or confirmed a generic one you may use):
+1. Vercel → Environment Variables (Production): `TERMII_API_KEY` (Termii dashboard), `TERMII_SENDER_ID`
+   (e.g. `Doova`), optionally `TERMII_BASE_URL` (default `https://v4.api.termii.com`) and
+   `TERMII_CHANNEL` (default `dnd`). Redeploy.
+2. Supabase → **Authentication → Auth Hooks → Send SMS hook → HTTPS**, URL
+   `https://www.getdoova.com/api/auth/sms-hook`. Generate the secret, copy it into Vercel as
+   `SUPABASE_SMS_HOOK_SECRET`, redeploy, then enable the hook.
+3. Supabase → Authentication → Sign In / Providers → Phone: set the SMS OTP expiry to 600 seconds
+   (the text says the code lasts 10 minutes).
+4. Test with your own real number, then remove the test phone numbers.
+Failures show in Vercel's logs as `sms: …` (numbers are shortened), and people see "We couldn't send a
+text right now"; a common cause is an empty Termii wallet.
 
 ## Working on the code
 

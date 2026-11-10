@@ -1,11 +1,11 @@
 // The company behind Doova, shown in the website footer. Partners (Termii, Paystack, banks) look for the
-// registered name, RC number and a physical address on the site.
+// registered name and RC number on the site (and sometimes a physical address).
 // The details stay hidden until CAC approves the registration: set `rc` to the RC number from the
 // Certificate of Incorporation (or COMPANY_RC_NUMBER in Vercel to preview) and they appear on every page.
 export const COMPANY = {
   legalName: "Doova Labs Limited",
   rc: process.env.COMPANY_RC_NUMBER ?? "", // e.g. "9123456" once CAC approves (application submitted 10 Nov 2026)
-  address: "2 Shoretire Street, Orile Agege, Lagos, Nigeria",
+  address: "", // not shown on the website (decided 10 Nov 2026); put the registered address here to show it
   email: "hello@getdoova.com",
   year: 2026, // the copyright year shown in the footer
 };
@@ -19,7 +19,8 @@ export function withCompanyFooter(html: string): string {
   const line =
     `<span class="stack" style="gap:6px;">` +
     `<span>© ${COMPANY.year} ${esc(COMPANY.legalName)} · RC ${esc(rc)}</span>` +
-    `<span>Doova is a product of ${esc(COMPANY.legalName)}, registered in Nigeria. ${esc(COMPANY.address)} · ` +
+    `<span>Doova is a product of ${esc(COMPANY.legalName)}, registered in Nigeria. ` +
+    (COMPANY.address ? `${esc(COMPANY.address)} · ` : "") +
     `<a href="mailto:${esc(COMPANY.email)}" style="color:inherit;font-size:inherit;">${esc(COMPANY.email)}</a></span></span>`;
   return html.replace(/<span>© \d{4} Doova\. getdoova\.com<\/span>/, line);
 }

@@ -66,7 +66,7 @@ export async function dispatchPending(limit = 300): Promise<{ notes: number; sen
   ]);
   const wants = new Set((prefs ?? []).filter((p) => p.notify_push).map((p) => p.id as string));
   const { publicKey, privateKey } = await vapidKeys();
-  const origin = String(site?.value ?? "https://doova-app.vercel.app");
+  const origin = String(site?.value ?? "https://getdoova.com");
   let sent = 0; const dead: string[] = []; const ok: string[] = [];
   for (const x of todo) {
     if (!wants.has(x.user_id)) continue;
@@ -75,7 +75,7 @@ export async function dispatchPending(limit = 300): Promise<{ notes: number; sen
     for (const s of (subs ?? []).filter((s) => s.user_id === x.user_id)) {
       try {
         await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload,
-          { vapidDetails: { subject: origin.startsWith("https://") ? origin : "mailto:hello@doova.ng", publicKey, privateKey }, TTL: 6 * 3600, urgency: x.kind === "new_task" ? "normal" : "high" });
+          { vapidDetails: { subject: origin.startsWith("https://") ? origin : "mailto:hello@getdoova.com", publicKey, privateKey }, TTL: 6 * 3600, urgency: x.kind === "new_task" ? "normal" : "high" });
         sent++; ok.push(s.id as string);
       } catch (e) {
         const code = (e as { statusCode?: number }).statusCode;

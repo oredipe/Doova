@@ -39,7 +39,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
     <>
       <Top title={owner ? "Settings" : "Your activity"} sub={owner ? "Switches, staff and the activity log. Every change is logged with your name." : "Everything you've done in admin, newest first"} />
       <div className="ops-body">
-        {sp.done && <div className="c-note" role="status"><Icon name="check" size={18} /><span>{sp.done === "added" ? "Added. They sign in to the Doova app with their phone, then open doova.ng/admin to set up their authenticator."
+        {sp.done && <div className="c-note" role="status"><Icon name="check" size={18} /><span>{sp.done === "added" ? "Added. They sign in to the Doova app with their phone, then open getdoova.com/admin to set up their authenticator."
           : sp.done === "removed_linked" ? "Removed from admin. Their authenticator was taken off too, so their Doova app account works like anyone else’s (password resets need only a text code)."
           : "Saved."}</span></div>}
         {sp.error && <p className="c-error" role="alert">{sp.error}</p>}

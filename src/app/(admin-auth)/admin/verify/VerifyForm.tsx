@@ -42,7 +42,7 @@ export function VerifyForm({ hasAuthenticator, email }: { hasAuthenticator: bool
       </label>
       {state.error && <p className="c-error" role="alert">{state.error}</p>}
       <button className="c-btn c-btn-primary c-btn-block" disabled={pending}>{pending ? "Checking…" : "Continue to admin"}</button>
-      {setup.qr && <p className="c-small">Next time, sign in at doova.ng/admin/sign-in with {email}, your Doova password and a code from the app.</p>}
+      {setup.qr && <p className="c-small">Next time, sign in at getdoova.com/admin/sign-in with {email}, your Doova password and a code from the app.</p>}
     </form>
   );
 }

@@ -35,12 +35,12 @@ export function AddStaffForm() {
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <p className="c-sub" style={{ margin: 0, color: "var(--c-ink)" }}><strong>{d.name}</strong> can now sign in to admin. Send them these details privately (not in a group chat). The password is shown only once.</p>
         <div className="c-card" style={{ background: "var(--c-ground)", display: "flex", flexDirection: "column", gap: 6, fontSize: 15 }}>
-          <span>Sign in at <strong>doova-app.vercel.app/admin/sign-in</strong></span>
+          <span>Sign in at <strong>getdoova.com/admin/sign-in</strong></span>
           <span>Email: <strong>{d.email}</strong></span>
           <span>Temporary password: <strong style={{ fontFamily: "ui-monospace, monospace" }}>{d.password}</strong></span>
         </div>
         <span className="c-small">On first sign-in they set up an authenticator app and choose their own password.</span>
-        <button type="button" className="c-btn c-btn-quiet" onClick={() => { navigator.clipboard?.writeText(`Doova admin\nSign in: https://doova-app.vercel.app/admin/sign-in\nEmail: ${d.email}\nTemporary password: ${d.password}`); setCopied(true); }}>
+        <button type="button" className="c-btn c-btn-quiet" onClick={() => { navigator.clipboard?.writeText(`Doova admin\nSign in: https://getdoova.com/admin/sign-in\nEmail: ${d.email}\nTemporary password: ${d.password}`); setCopied(true); }}>
           {copied ? "Copied" : "Copy these details"}
         </button>
         <a href="/admin/settings" className="c-link" style={{ alignSelf: "center" }}>Done</a>

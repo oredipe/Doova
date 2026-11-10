@@ -1,4 +1,4 @@
-/* doova.ng website styles, exported from the design canvas (4 Nov). Scoped to .ws. */
+/* getdoova.com website styles, exported from the design canvas (4 Nov). Scoped to .ws. */
 /* Doova website: one set of pages, responsive by container width (phone first, laptop from 900px) */
 .ws { container-type: inline-size; box-sizing: border-box; font-family: var(--font-archivo), system-ui, sans-serif; color: #111111; background: #F6F6F1; -webkit-font-smoothing: antialiased; }
 .ws *, .ws *::before, .ws *::after { box-sizing: border-box; }

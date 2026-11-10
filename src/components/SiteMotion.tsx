@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
-// Scroll motion for doova.ng (6 Nov). Blocks below the first screen rise in as they scroll into view,
+// Scroll motion for getdoova.com (6 Nov). Blocks below the first screen rise in as they scroll into view,
 // one after another within a section; line doodles draw themselves. Content that's already on screen
 // is never hidden (no flicker), nothing happens without JavaScript, and nothing moves for people who
 // ask their device for reduced motion. The hero's entrance is pure CSS (website.css).

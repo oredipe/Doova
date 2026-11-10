@@ -8,7 +8,7 @@ export function AdminSignInForm() {
     <form action={action} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <label className="c-field">
         <span className="c-label">Work email</span>
-        <input className="c-input" name="email" type="email" autoComplete="username" required placeholder="you@doova.ng" defaultValue={state.email} key={state.email} />
+        <input className="c-input" name="email" type="email" autoComplete="username" required placeholder="you@getdoova.com" defaultValue={state.email} key={state.email} />
       </label>
       <label className="c-field">
         <span className="c-label">Password</span>

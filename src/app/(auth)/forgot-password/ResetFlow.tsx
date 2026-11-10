@@ -3,19 +3,20 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { maskPhone, normaliseNigerianPhone } from "@/lib/phone";
+import { maskPhone } from "@/lib/phone";
+import { maskEmail, readContact, type Contact } from "@/lib/contact";
 import { friendlyAuthError } from "@/lib/auth-errors";
 import { CodeInput } from "@/components/CodeInput";
 
-// Forgot password: prove it's your phone with a text code, then choose a new password.
+// Forgot password: prove it's your phone (text code) or your email (email code), then choose a new password.
 // The code signs you in; the new password replaces the old one.
 type Step = "phone" | "code" | "authenticator" | "password";
 
-export function ResetFlow() {
+export function ResetFlow({ smsOn }: { smsOn: boolean }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("phone");
-  const [phoneText, setPhoneText] = useState("");
-  const [phone, setPhone] = useState<string | null>(null);
+  const [idText, setIdText] = useState("");
+  const [sentTo, setSentTo] = useState<Contact | null>(null);
   const [code, setCode] = useState("");
   const [pass, setPass] = useState("");
   const [totp, setTotp] = useState("");
@@ -33,22 +34,30 @@ export function ResetFlow() {
   async function sendCode(e?: React.FormEvent) {
     e?.preventDefault();
     setError(null);
-    const p = phone && step === "code" ? phone : normaliseNigerianPhone(phoneText);
-    if (!p) { setError("Enter a Nigerian mobile number, like 0803 123 4567."); return; }
+    const c = sentTo && step === "code" ? sentTo : readContact(idText);
+    if (!c) { setError(idText.includes("@") ? "That email doesn’t look right. Check it and try again." : "Enter your phone number, like 0803 123 4567, or your email."); return; }
+    if (c.kind === "phone" && !smsOn) {
+      setError("We can’t send text codes right now. If you added an email to your Doova account, enter it instead. If not, email hello@getdoova.com from any address and we’ll help you back in.");
+      return;
+    }
     setBusy(true);
-    const { error } = await createClient().auth.signInWithOtp({ phone: p, options: { shouldCreateUser: false } });
+    const { error } = c.kind === "phone"
+      ? await createClient().auth.signInWithOtp({ phone: c.value, options: { shouldCreateUser: false } })
+      : await createClient().auth.signInWithOtp({ email: c.value, options: { shouldCreateUser: false } });
     setBusy(false);
-    if (error) { setError(friendlyAuthError(error.message)); return; }
-    setPhone(p); setCode(""); setResendIn(45); setStep("code");
+    if (error) { setError(friendlyAuthError(error.message, c.kind)); return; }
+    setSentTo(c); setCode(""); setResendIn(45); setStep("code");
   }
 
   async function checkCode(e: React.FormEvent) {
     e.preventDefault();
-    if (!phone || code.length !== 6) { setError("Enter the 6 digits from the text."); return; }
+    if (!sentTo || code.length !== 6) { setError(`Enter the 6 digits from the ${sentTo?.kind === "email" ? "email" : "text"}.`); return; }
     setError(null); setBusy(true);
-    const { data, error } = await createClient().auth.verifyOtp({ phone, token: code, type: "sms" });
+    const { data, error } = sentTo.kind === "phone"
+      ? await createClient().auth.verifyOtp({ phone: sentTo.value, token: code, type: "sms" })
+      : await createClient().auth.verifyOtp({ email: sentTo.value, token: code, type: "email" });
     setBusy(false);
-    if (error) { setError(friendlyAuthError(error.message)); return; }
+    if (error) { setError(friendlyAuthError(error.message, sentTo.kind)); return; }
     if (!data.user?.user_metadata?.profile_complete) { router.replace("/sign-up?step=profile"); return; }  // never finished sign-up
     // Accounts with an authenticator app (staff) also need its code before the password can change.
     const { data: aal } = await createClient().auth.mfa.getAuthenticatorAssuranceLevel();
@@ -96,15 +105,17 @@ export function ResetFlow() {
       <form onSubmit={sendCode} style={{ display: "flex", flexDirection: "column", gap: 22 }} noValidate>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <h1 className="c-title">Forgot your password?</h1>
-          <p className="c-sub">No problem. Enter the phone number you signed up with and we&rsquo;ll text you a code.</p>
+          <p className="c-sub">
+            {smsOn
+              ? "No problem. Enter the phone number or email on your Doova account and we’ll send you a code."
+              : "No problem. Enter the email on your Doova account and we’ll email you a code."}
+          </p>
         </div>
         <div className="c-field">
-          <label className="c-label" htmlFor="fp-phone">Phone number</label>
-          <div className="c-prefix">
-            <span aria-hidden="true">+234</span>
-            <input id="fp-phone" className="c-input" inputMode="tel" autoComplete="tel-national" placeholder="803 000 0000"
-              value={phoneText} onChange={(e) => setPhoneText(e.target.value)} aria-invalid={!!error || undefined} />
-          </div>
+          <label className="c-label" htmlFor="fp-phone">{smsOn ? "Phone number or email" : "Email"}</label>
+          <input id="fp-phone" className="c-input" autoComplete="username" autoCapitalize="none" spellCheck={false}
+            placeholder={smsOn ? "0803 000 0000 or ada@gmail.com" : "ada@gmail.com"}
+            value={idText} onChange={(e) => setIdText(e.target.value)} aria-invalid={!!error || undefined} />
         </div>
         {error && <p className="c-error" role="alert">{error}</p>}
         <button className="c-btn c-btn-primary c-btn-block" disabled={busy}>{busy ? "Sending…" : "Send me a code"}</button>
@@ -120,16 +131,19 @@ export function ResetFlow() {
       <form onSubmit={checkCode} style={{ display: "flex", flexDirection: "column", gap: 22 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <h1 className="c-title">Enter the code</h1>
-          <p className="c-sub">We sent 6 digits by text to {phone ? maskPhone(phone) : "your phone"}.</p>
+          <p className="c-sub">
+            {sentTo?.kind === "email" ? `We emailed 6 digits to ${maskEmail(sentTo.value)}.` : `We sent 6 digits by text to ${sentTo ? maskPhone(sentTo.value) : "your phone"}.`}
+          </p>
         </div>
         <CodeInput value={code} onChange={setCode} invalid={!!error} />
+        {sentTo?.kind === "email" && <p className="c-small" style={{ margin: 0 }}>Not there after a minute? Check Spam and Promotions.</p>}
         {error && <p className="c-error" role="alert">{error}</p>}
         <button className="c-btn c-btn-primary c-btn-block" disabled={busy || code.length !== 6}>{busy ? "Checking…" : "Continue"}</button>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
           {resendIn > 0
             ? <span className="c-small">Didn&rsquo;t get it? Resend in 0:{String(resendIn).padStart(2, "0")}</span>
             : <button type="button" className="c-link" onClick={() => sendCode()}>Send a new code</button>}
-          <button type="button" className="c-link" onClick={() => { setStep("phone"); setError(null); }}>Change number</button>
+          <button type="button" className="c-link" onClick={() => { setStep("phone"); setError(null); }}>{sentTo?.kind === "email" ? "Change email" : "Change number"}</button>
         </div>
       </form>
     );
@@ -158,7 +172,7 @@ export function ResetFlow() {
     <form onSubmit={savePassword} style={{ display: "flex", flexDirection: "column", gap: 22 }} noValidate>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <h1 className="c-title">Choose a new password</h1>
-        <p className="c-sub">Your phone number is checked. Pick a password you haven&rsquo;t used for Doova before.</p>
+        <p className="c-sub">Your {sentTo?.kind === "email" ? "email" : "phone number"} is checked. Pick a password you haven&rsquo;t used for Doova before.</p>
       </div>
       <div className="c-field">
         <label className="c-label" htmlFor="fp-pass">New password</label>

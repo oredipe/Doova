@@ -20,7 +20,7 @@ export async function getAccountNumber(back: string, form: FormData) {
   }
   const parts = (u?.legal_name || u?.full_name || "Doova Creator").trim().split(/\s+/);
   try {
-    const a = await createDedicatedAccount({ userId: me.id, firstName: parts[0], lastName: parts.length > 1 ? parts[parts.length - 1] : parts[0], phone: u?.phone ?? me.phone, email: u?.email ?? email });
+    const a = await createDedicatedAccount({ userId: me.id, firstName: parts[0], lastName: parts.length > 1 ? parts[parts.length - 1] : parts[0], phone: u?.phone ?? me.phone ?? undefined, email: u?.email ?? email });
     await db.rpc("save_virtual_account", { p_owner_type: "user", p_owner_id: me.id, p_provider: "paystack", p_bank: a.bank,
       p_account_number: a.accountNumber, p_account_name: a.accountName, p_provider_ref: a.customerCode });
   } catch (e) {

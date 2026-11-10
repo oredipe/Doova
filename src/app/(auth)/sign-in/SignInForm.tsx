@@ -3,19 +3,21 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { maskPhone, normaliseNigerianPhone } from "@/lib/phone";
-import { friendlyAuthError } from "@/lib/auth-errors";
+import { maskPhone } from "@/lib/phone";
+import { maskEmail, readContact, type Contact } from "@/lib/contact";
+import { friendlyAuthError, TEXTS_PAUSED } from "@/lib/auth-errors";
 import { CodeInput } from "@/components/CodeInput";
 import { Icon } from "@/components/Icon";
 
 type Mode = "password" | "code-ask" | "code-enter";
 
-export function SignInForm({ next }: { next: string }) {
+/** Sign in with a phone number or email: password, or a one-time code (by text or by email). */
+export function SignInForm({ next, smsOn }: { next: string; smsOn: boolean }) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("password");
-  const [phoneText, setPhoneText] = useState("");
+  const [idText, setIdText] = useState("");
   const [password, setPassword] = useState("");
-  const [phone, setPhone] = useState<string | null>(null);
+  const [sentTo, setSentTo] = useState<Contact | null>(null);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -25,57 +27,62 @@ export function SignInForm({ next }: { next: string }) {
     router.refresh();
   }
 
-  function readPhone(): string | null {
-    const p = normaliseNigerianPhone(phoneText);
-    if (!p) setError("Enter a Nigerian mobile number, like 0803 123 4567.");
-    return p;
+  function readId(): Contact | null {
+    const c = readContact(idText);
+    if (!c) setError(idText.includes("@") ? "That email doesn’t look right. Check it and try again." : "Enter your phone number, like 0803 123 4567, or your email.");
+    return c;
   }
 
   async function withPassword(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    const p = readPhone();
-    if (!p) return;
+    const c = readId();
+    if (!c) return;
     if (!password) { setError("Enter your password."); return; }
     setBusy(true);
-    const { data, error } = await createClient().auth.signInWithPassword({ phone: p, password });
+    const { data, error } = c.kind === "phone"
+      ? await createClient().auth.signInWithPassword({ phone: c.value, password })
+      : await createClient().auth.signInWithPassword({ email: c.value, password });
     setBusy(false);
-    if (error) { setError(friendlyAuthError(error.message)); return; }
+    if (error) { setError(friendlyAuthError(error.message, c.kind)); return; }
     go(!!data.user?.user_metadata?.profile_complete);
   }
 
   async function askCode(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    const p = readPhone();
-    if (!p) return;
+    const c = readId();
+    if (!c) return;
+    if (c.kind === "phone" && !smsOn) { setError(TEXTS_PAUSED); return; }
     setBusy(true);
-    const { error } = await createClient().auth.signInWithOtp({ phone: p, options: { shouldCreateUser: false } });
+    const { error } = c.kind === "phone"
+      ? await createClient().auth.signInWithOtp({ phone: c.value, options: { shouldCreateUser: false } })
+      : await createClient().auth.signInWithOtp({ email: c.value, options: { shouldCreateUser: false } });
     setBusy(false);
-    if (error) { setError(friendlyAuthError(error.message)); return; }
-    setPhone(p);
+    if (error) { setError(friendlyAuthError(error.message, c.kind)); return; }
+    setSentTo(c);
+    setCode("");
     setMode("code-enter");
   }
 
   async function checkCode(e: React.FormEvent) {
     e.preventDefault();
-    if (!phone || code.length !== 6) { setError("Enter the 6 digits from the text."); return; }
+    if (!sentTo || code.length !== 6) { setError(`Enter the 6 digits from the ${sentTo?.kind === "email" ? "email" : "text"}.`); return; }
     setError(null);
     setBusy(true);
-    const { data, error } = await createClient().auth.verifyOtp({ phone, token: code, type: "sms" });
+    const { data, error } = sentTo.kind === "phone"
+      ? await createClient().auth.verifyOtp({ phone: sentTo.value, token: code, type: "sms" })
+      : await createClient().auth.verifyOtp({ email: sentTo.value, token: code, type: "email" });
     setBusy(false);
-    if (error) { setError(friendlyAuthError(error.message)); return; }
+    if (error) { setError(friendlyAuthError(error.message, sentTo.kind)); return; }
     go(!!data.user?.user_metadata?.profile_complete);
   }
 
-  const phoneField = (
+  const idField = (
     <div className="c-field">
-      <label className="c-label" htmlFor="si-phone">Phone number</label>
-      <div className="c-prefix">
-        <span aria-hidden="true">+234</span>
-        <input id="si-phone" className="c-input" inputMode="tel" autoComplete="tel-national" placeholder="803 000 0000"
-          value={phoneText} onChange={(e) => setPhoneText(e.target.value)} />
-      </div>
+      <label className="c-label" htmlFor="si-phone">Phone number or email</label>
+      <input id="si-phone" className="c-input" autoComplete="username" autoCapitalize="none" spellCheck={false}
+        placeholder="0803 000 0000 or ada@gmail.com" value={idText} onChange={(e) => setIdText(e.target.value)} />
     </div>
   );
 
@@ -84,13 +91,15 @@ export function SignInForm({ next }: { next: string }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <h1 className="c-title">{mode === "code-enter" ? "Enter the code" : "Welcome back"}</h1>
         <p className="c-sub">
-          {mode === "code-enter" && phone ? `We sent 6 digits by text to ${maskPhone(phone)}.` : "Sign in to earn or post tasks."}
+          {mode === "code-enter" && sentTo
+            ? sentTo.kind === "email" ? `We emailed 6 digits to ${maskEmail(sentTo.value)}.` : `We sent 6 digits by text to ${maskPhone(sentTo.value)}.`
+            : "Sign in to earn or post tasks."}
         </p>
       </div>
 
       {mode === "password" && (
         <form onSubmit={withPassword} style={{ display: "flex", flexDirection: "column", gap: 18 }} noValidate>
-          {phoneField}
+          {idField}
           <div className="c-field">
             <label className="c-label" htmlFor="si-pass">Password</label>
             <input id="si-pass" type="password" className="c-input" autoComplete="current-password"
@@ -99,7 +108,7 @@ export function SignInForm({ next }: { next: string }) {
           {error && <p className="c-error" role="alert">{error}</p>}
           <button className="c-btn c-btn-primary c-btn-block" disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-            <button type="button" className="c-link" onClick={() => { setMode("code-ask"); setError(null); }}>Sign in with a text code instead</button>
+            <button type="button" className="c-link" onClick={() => { setMode("code-ask"); setError(null); }}>Sign in with a code instead</button>
             <Link href="/forgot-password" className="c-link" style={{ whiteSpace: "nowrap" }}>Forgot password?</Link>
           </div>
         </form>
@@ -107,7 +116,10 @@ export function SignInForm({ next }: { next: string }) {
 
       {mode === "code-ask" && (
         <form onSubmit={askCode} style={{ display: "flex", flexDirection: "column", gap: 18 }} noValidate>
-          {phoneField}
+          {idField}
+          <span className="c-small" style={{ marginTop: -8 }}>
+            {smsOn ? "We’ll text the code to your phone, or email it if you enter your email." : "Enter your email and we’ll email you a code."}
+          </span>
           {error && <p className="c-error" role="alert">{error}</p>}
           <button className="c-btn c-btn-primary c-btn-block" disabled={busy}>{busy ? "Sending…" : "Send me a code"}</button>
           <button type="button" className="c-link" onClick={() => { setMode("password"); setError(null); }}>Use my password</button>
@@ -117,9 +129,12 @@ export function SignInForm({ next }: { next: string }) {
       {mode === "code-enter" && (
         <form onSubmit={checkCode} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           <CodeInput value={code} onChange={setCode} invalid={!!error} />
+          {sentTo?.kind === "email" && <p className="c-small" style={{ margin: 0 }}>Not there after a minute? Check Spam and Promotions.</p>}
           {error && <p className="c-error" role="alert">{error}</p>}
           <button className="c-btn c-btn-primary c-btn-block" disabled={busy || code.length !== 6}>{busy ? "Checking…" : "Sign in"}</button>
-          <button type="button" className="c-link" onClick={() => { setMode("code-ask"); setCode(""); setError(null); }}>Change number</button>
+          <button type="button" className="c-link" onClick={() => { setMode("code-ask"); setCode(""); setError(null); }}>
+            {sentTo?.kind === "email" ? "Change email" : "Change number"}
+          </button>
         </form>
       )}
 

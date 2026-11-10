@@ -4,24 +4,33 @@ import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { maskPhone, normaliseNigerianPhone } from "@/lib/phone";
+import { isEmail, maskEmail } from "@/lib/contact";
 import { friendlyAuthError } from "@/lib/auth-errors";
 import { CodeInput } from "@/components/CodeInput";
 import { completeProfile, type ProfileFormState } from "../actions";
 
-type Step = "phone" | "code" | "profile";
+type Step = "start" | "code" | "profile";
 type Mode = "earn" | "create";
+type Via = "phone" | "email";
 
 const ROLES: { mode: Mode; title: string; text: string }[] = [
   { mode: "earn", title: "I want to earn", text: "Do tasks on my phone and get paid" },
   { mode: "create", title: "I want to post tasks", text: "Get answers from real people" },
 ];
 
-export function SignUpFlow({ startAt }: { startAt: Step }) {
+/**
+ * Sign-up: choose earn or post → a code by text or email → name and password.
+ * With texts on, doers start on phone and creators on email; either can switch. With texts off, email only.
+ */
+export function SignUpFlow({ startAt, smsOn }: { startAt: "start" | "profile"; smsOn: boolean }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>(startAt);
   const [mode, setMode] = useState<Mode>("earn");
+  const [chosenVia, setChosenVia] = useState<Via | null>(null);
+  const via: Via = !smsOn ? "email" : chosenVia ?? (mode === "earn" ? "phone" : "email");
   const [phoneText, setPhoneText] = useState("");
-  const [phone, setPhone] = useState<string | null>(null);
+  const [emailText, setEmailText] = useState("");
+  const [sentTo, setSentTo] = useState<{ via: Via; value: string } | null>(null);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -37,16 +46,21 @@ export function SignUpFlow({ startAt }: { startAt: Step }) {
   async function sendCode(e?: React.FormEvent) {
     e?.preventDefault();
     setError(null);
-    const p = normaliseNigerianPhone(phoneText);
-    if (!p) { setError("Enter a Nigerian mobile number, like 0803 123 4567."); return; }
+    const target = step === "code" && sentTo ? sentTo : via === "phone"
+      ? (() => { const p = normaliseNigerianPhone(phoneText); return p ? { via: "phone" as const, value: p } : null; })()
+      : isEmail(emailText) ? { via: "email" as const, value: emailText.trim().toLowerCase() } : null;
+    if (!target) {
+      setError(via === "phone" ? "Enter a Nigerian mobile number, like 0803 123 4567." : "Enter your email, like ada@gmail.com.");
+      return;
+    }
     setBusy(true);
-    const { error } = await createClient().auth.signInWithOtp({
-      phone: p,
-      options: { shouldCreateUser: true, data: { app_mode: mode } },
-    });
+    const options = { shouldCreateUser: true, data: { app_mode: mode } };
+    const { error } = target.via === "phone"
+      ? await createClient().auth.signInWithOtp({ phone: target.value, options })
+      : await createClient().auth.signInWithOtp({ email: target.value, options });
     setBusy(false);
-    if (error) { setError(friendlyAuthError(error.message)); return; }
-    setPhone(p);
+    if (error) { setError(friendlyAuthError(error.message, target.via)); return; }
+    setSentTo(target);
     setCode("");
     setResendIn(45);
     setStep("code");
@@ -54,17 +68,19 @@ export function SignUpFlow({ startAt }: { startAt: Step }) {
 
   async function checkCode(e: React.FormEvent) {
     e.preventDefault();
-    if (!phone || code.length !== 6) { setError("Enter the 6 digits from the text."); return; }
+    if (!sentTo || code.length !== 6) { setError(`Enter the 6 digits from the ${sentTo?.via === "email" ? "email" : "text"}.`); return; }
     setError(null);
     setBusy(true);
-    const { data, error } = await createClient().auth.verifyOtp({ phone, token: code, type: "sms" });
+    const { data, error } = sentTo.via === "phone"
+      ? await createClient().auth.verifyOtp({ phone: sentTo.value, token: code, type: "sms" })
+      : await createClient().auth.verifyOtp({ email: sentTo.value, token: code, type: "email" });
     setBusy(false);
-    if (error) { setError(friendlyAuthError(error.message)); return; }
+    if (error) { setError(friendlyAuthError(error.message, sentTo.via)); return; }
     if (data.user?.user_metadata?.profile_complete) { router.replace("/tasks"); return; }
     setStep("profile");
   }
 
-  if (step === "phone") {
+  if (step === "start") {
     return (
       <form onSubmit={sendCode} style={{ display: "flex", flexDirection: "column", gap: 22 }} noValidate>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -82,15 +98,36 @@ export function SignUpFlow({ startAt }: { startAt: Step }) {
             </button>
           ))}
         </div>
-        <div className="c-field">
-          <label className="c-label" htmlFor="su-phone">Phone number</label>
-          <div className="c-prefix">
-            <span aria-hidden="true">+234</span>
-            <input id="su-phone" className="c-input" inputMode="tel" autoComplete="tel-national" placeholder="803 000 0000"
-              value={phoneText} onChange={(e) => setPhoneText(e.target.value)} aria-invalid={!!error || undefined}
-              aria-describedby={error ? "su-err" : undefined} />
+        {smsOn && (
+          <div className="c-seg" role="radiogroup" aria-label="Get your code by">
+            {(["phone", "email"] as const).map((v) => (
+              <button key={v} type="button" role="radio" aria-checked={via === v} onClick={() => { setChosenVia(v); setError(null); }}>
+                {v === "phone" ? "Phone number" : "Email"}
+              </button>
+            ))}
           </div>
-        </div>
+        )}
+        {via === "phone" ? (
+          <div className="c-field">
+            <label className="c-label" htmlFor="su-phone">Phone number</label>
+            <div className="c-prefix">
+              <span aria-hidden="true">+234</span>
+              <input id="su-phone" className="c-input" inputMode="tel" autoComplete="tel-national" placeholder="803 000 0000"
+                value={phoneText} onChange={(e) => setPhoneText(e.target.value)} aria-invalid={!!error || undefined}
+                aria-describedby={error ? "su-err" : undefined} />
+            </div>
+          </div>
+        ) : (
+          <div className="c-field">
+            <label className="c-label" htmlFor="su-email">Email</label>
+            <input id="su-email" className="c-input" type="email" inputMode="email" autoComplete="email" placeholder="ada@gmail.com"
+              value={emailText} onChange={(e) => setEmailText(e.target.value)} aria-invalid={!!error || undefined}
+              aria-describedby={error ? "su-err" : "su-email-hint"} />
+            <span id="su-email-hint" className="c-small">
+              {smsOn || mode === "create" ? "We’ll email you a 6-digit code." : "We’ll email you a 6-digit code. You’ll add your phone number later, before your first withdrawal."}
+            </span>
+          </div>
+        )}
         {error && <p id="su-err" className="c-error" role="alert">{error}</p>}
         <button className="c-btn c-btn-primary c-btn-block" disabled={busy}>{busy ? "Sending…" : "Send me a code"}</button>
         <p className="c-small" style={{ margin: 0 }}>
@@ -105,20 +142,24 @@ export function SignUpFlow({ startAt }: { startAt: Step }) {
   }
 
   if (step === "code") {
+    const byEmail = sentTo?.via === "email";
     return (
       <form onSubmit={checkCode} style={{ display: "flex", flexDirection: "column", gap: 22 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <h1 className="c-title">Enter the code</h1>
-          <p className="c-sub">We sent 6 digits by text to {phone ? maskPhone(phone) : "your phone"}.</p>
+          <p className="c-sub">
+            {byEmail ? `We emailed 6 digits to ${maskEmail(sentTo!.value)}.` : `We sent 6 digits by text to ${sentTo ? maskPhone(sentTo.value) : "your phone"}.`}
+          </p>
         </div>
         <CodeInput value={code} onChange={setCode} invalid={!!error} />
+        {byEmail && <p className="c-small" style={{ margin: 0 }}>Not there after a minute? Check Spam and Promotions. It comes from Doova.</p>}
         {error && <p className="c-error" role="alert">{error}</p>}
         <button className="c-btn c-btn-primary c-btn-block" disabled={busy || code.length !== 6}>{busy ? "Checking…" : "Continue"}</button>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
           {resendIn > 0
             ? <span className="c-small">Didn&rsquo;t get it? Resend in 0:{String(resendIn).padStart(2, "0")}</span>
             : <button type="button" className="c-link" onClick={() => sendCode()}>Send a new code</button>}
-          <button type="button" className="c-link" onClick={() => { setStep("phone"); setError(null); }}>Change number</button>
+          <button type="button" className="c-link" onClick={() => { setStep("start"); setError(null); }}>{byEmail ? "Change email" : "Change number"}</button>
         </div>
       </form>
     );
@@ -130,7 +171,7 @@ export function SignUpFlow({ startAt }: { startAt: Step }) {
       <input type="hidden" name="mode" value={mode} />
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <h1 className="c-title">Almost done</h1>
-        <p className="c-sub">Your phone number is checked. Tell us your name and choose a password.</p>
+        <p className="c-sub">Your {sentTo?.via === "email" ? "email" : sentTo ? "phone number" : "sign-up"} is checked. Tell us your name and choose a password.</p>
       </div>
       <div className="c-field">
         <label className="c-label" htmlFor="su-name">Your name</label>

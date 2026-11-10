@@ -6,7 +6,8 @@ import { getAuthUser } from "@/lib/supabase/server";
 
 export type Profile = {
   id: string;
-  phone: string;
+  phone: string | null;
+  email: string | null;
   full_name: string | null;
   kyc_tier: number;
   level: number;
@@ -25,7 +26,7 @@ export const requireProfile = cache(async (): Promise<Profile> => {
   const db = createAdminClient();
   const { data, error } = await db
     .from("users")
-    .select("id, phone, full_name, kyc_tier, level, xp, streak_days, creator_tier, app_mode, status, staff_only")
+    .select("id, phone, email, full_name, kyc_tier, level, xp, streak_days, creator_tier, app_mode, status, staff_only")
     .eq("id", user.id)
     .maybeSingle();
   if (error) throw new Error("Could not load your profile: " + error.message);

@@ -118,6 +118,29 @@ Codes are sent by `/api/auth/sms-hook`: Supabase hands it each code, it sends th
 Failures show in Vercel's logs as `sms: …` (numbers are shortened), and people see "We couldn't send a
 text right now"; a common cause is an empty Termii wallet.
 
+### 4. Email codes (Resend)
+People can sign up, sign in and reset their password with a 6-digit code sent by email. While text
+codes are off (no Termii Sender ID yet) email is the only way to sign up; once they're on, sign-up
+offers both (doers start on phone, creators on email). Text codes count as on when `TERMII_API_KEY`
+and `TERMII_SENDER_ID` are both set in Vercel; `SMS_CODES=on` or `off` forces it.
+
+Someone who signed up by email adds a phone number before their first withdrawal (only asked once
+text codes are on). The NIN check and "one bank account, one Doova account" apply either way.
+
+1. resend.com → add the domain `getdoova.com`, add the DNS records it shows in Cloudflare (DNS only),
+   wait for "Verified", then create an API key.
+2. Supabase → **Authentication → Emails → SMTP Settings**: enable custom SMTP. Sender email
+   `no-reply@getdoova.com`, sender name `Doova`, host `smtp.resend.com`, port `465`, username
+   `resend`, password = the Resend API key.
+3. Supabase → **Authentication → Emails → Templates**: paste the files in `supabase/email-templates/`
+   into **Confirm signup** (subject "Your Doova sign-up code"), **Magic Link** ("Your Doova sign-in
+   code") and **Change Email Address** ("Confirm your email for Doova"). They show the code
+   (`{{ .Token }}`), not a link.
+4. Supabase → **Authentication → Sign In / Providers → Email**: enabled, "Confirm email" on, Email OTP
+   length **6**, Email OTP expiration **600** seconds.
+5. Supabase → **Authentication → Rate Limits**: raise "emails sent" from the default to about 100 an hour.
+6. Run `supabase/updates/2026-11-10-email-codes.sql` in the SQL editor.
+
 ## Working on the code
 
 ```bash

@@ -7,6 +7,7 @@ import { checkNin, ninHash } from "@/lib/identity";
 import { createRecipient, friendlyPaystackError, listBanks, resolveAccount } from "@/lib/paystack";
 import { sendPayout } from "@/lib/payouts";
 import { kickPush } from "@/lib/push";
+import { smsCodesOn } from "@/lib/authChannels";
 
 const back = (base: string, q: Record<string, string>) => redirect(`${base}/withdraw?${new URLSearchParams(q)}`);
 
@@ -46,7 +47,9 @@ export async function saveBank(base: string, form: FormData) {
     p_account_number: number, p_account_name: accountName, p_recipient_code: recipient,
   });
   if (error) {
-    back(base, { error: error.message.includes("does not match")
+    back(base, { error: error.message.includes("another Doova account")
+      ? "This bank account is already linked to another Doova account. Each person can have one account."
+      : error.message.includes("does not match")
       ? `This account is in the name ${accountName}, which doesn't match the name on your NIN (${u?.legal_name}). Withdrawals only go to accounts in your own name.`
       : "Something went wrong. Please try again." });
   }
@@ -57,6 +60,7 @@ export async function saveBank(base: string, form: FormData) {
 export async function withdraw(purse: "earnings" | "funds", base: string, form: FormData) {
   kickPush();
   const me = await requireProfile();
+  if (!me.phone && (await smsCodesOn())) back(base, { error: "Add your phone number first." });
   const naira = Number(String(form.get("amount") ?? "").replace(/[₦,\s]/g, ""));
   if (!Number.isFinite(naira) || naira <= 0) back(base, { error: "Enter how much to withdraw." });
   const db = createAdminClient();

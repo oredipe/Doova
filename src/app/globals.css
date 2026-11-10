@@ -93,6 +93,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .c-radio[aria-checked="true"] { border-color: var(--c-ink); }
 .c-radio-dot { width: 22px; height: 22px; border-radius: 999px; border: 2px solid #8A8982; flex: none; margin-top: 1px; }
 .c-radio[aria-checked="true"] .c-radio-dot { border: 7px solid var(--c-ink); }
+.c-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 14px; background: #ECEBE7; }
+.c-seg button { min-height: 44px; border: 0; border-radius: 10px; background: transparent; font-size: 15px; font-weight: 600; color: var(--c-muted); cursor: pointer; }
+.c-seg button[aria-checked="true"] { background: var(--c-surface); color: var(--c-ink); box-shadow: 0 1px 2px rgba(17, 17, 17, 0.12); }
 
 /* ---------- auth pages ---------- */
 .auth { min-height: 100dvh; display: flex; flex-direction: column; }

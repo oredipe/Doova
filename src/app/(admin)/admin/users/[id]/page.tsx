@@ -35,7 +35,7 @@ export default async function Account({ params, searchParams }: { params: Promis
 
   return (
     <>
-      <Top title={u.full_name ?? "Account"} sub={`${u.phone ?? "Admin-only staff account"} · joined ${lagosDate(u.created_at, { day: "numeric", month: "long", year: "numeric" })}`} back={{ href: "/admin/users", label: "Users" }} />
+      <Top title={u.full_name ?? "Account"} sub={`${u.phone ?? (u.staff_only ? "Admin-only staff account" : u.email ?? "No phone yet")} · joined ${lagosDate(u.created_at, { day: "numeric", month: "long", year: "numeric" })}`} back={{ href: "/admin/users", label: "Users" }} />
       <div className="ops-body">
         {sp.done && <div className="c-note" role="status"><Icon name="check" size={18} /><span>{sp.done === "suspended" ? "Suspended. They can't start tasks or use the app until restored." : "Restored. They can use Doova again."}</span></div>}
         {sp.error && <p className="c-error" role="alert">{sp.error}</p>}

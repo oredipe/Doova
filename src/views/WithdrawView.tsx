@@ -7,8 +7,13 @@ import { listBanks, paystackConfigured } from "@/lib/paystack";
 import { testMode } from "@/lib/creator";
 import { AmountField } from "./AmountField";
 import { saveBank, verifyNin, withdraw } from "./withdrawActions";
+import { smsCodesOn } from "@/lib/authChannels";
+import { ConfirmContact } from "@/components/ConfirmContact";
 
-/** Withdraw: NIN check once → bank account in your name → amount. Same screen for Earnings and Creator funds. */
+/**
+ * Withdraw: phone number (only for email sign-ups, once texts are on) → NIN check once → bank account in
+ * your name → amount. Same screen for Earnings and Creator funds.
+ */
 export async function WithdrawView({ purse, base, sp }: { purse: "earnings" | "funds"; base: string; sp: { error?: string; done?: string; change?: string } }) {
   const me = await requireProfile();
   const db = createAdminClient();
@@ -20,7 +25,9 @@ export async function WithdrawView({ purse, base, sp }: { purse: "earnings" | "f
   ]);
   const s = Object.fromEntries((settings.data ?? []).map((r) => [r.key as string, r.value]));
   const balance = Number(bal?.balance_kobo ?? 0);
-  const step = (u?.kyc_tier ?? 0) < 1 ? "nin" : !bank || sp.change ? "bank" : "amount";
+  const needsPhone = !me.phone && (await smsCodesOn());
+  const step = needsPhone ? "phone" : (u?.kyc_tier ?? 0) < 1 ? "nin" : !bank || sp.change ? "bank" : "amount";
+  const steps = needsPhone ? 4 : 3, n = needsPhone ? 1 : 0;
   const label = purse === "earnings" ? "Earnings" : "Creator funds";
 
   return (
@@ -29,14 +36,21 @@ export async function WithdrawView({ purse, base, sp }: { purse: "earnings" | "f
         <Icon name="back" size={16} stroke={2} /> {label}
       </Link>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        <span className="c-small">{step === "nin" ? "Step 1 of 3 · Check your NIN" : step === "bank" ? "Step 2 of 3 · Your bank account" : `From your ${label} · ${naira(balance)} available`}</span>
-        <h1 className="c-title">{step === "nin" ? "First, a one-time NIN check" : step === "bank" ? "Where should we send it?" : "Withdraw"}</h1>
+        <span className="c-small">{step === "phone" ? `Step 1 of ${steps} · Your phone number` : step === "nin" ? `Step ${1 + n} of ${steps} · Check your NIN` : step === "bank" ? `Step ${2 + n} of ${steps} · Your bank account` : `From your ${label} · ${naira(balance)} available`}</span>
+        <h1 className="c-title">{step === "phone" ? "First, add your phone number" : step === "nin" ? "First, a one-time NIN check" : step === "bank" ? "Where should we send it?" : "Withdraw"}</h1>
       </div>
       {sp.done === "nin" && <div className="c-note" role="status"><Icon name="check" size={18} /><span>NIN checked. You won&rsquo;t need to do that again.</span></div>}
       {sp.done === "bank" && <div className="c-note" role="status"><Icon name="check" size={18} /><span>Bank account saved. It matches the name on your NIN.</span></div>}
       {sp.error && <p className="c-error" role="alert">{sp.error}</p>}
       {s.withdrawals_paused === true && <p className="c-error">Withdrawals are paused for a short check on our side. Your money is safe; try again in a few hours.</p>}
       {!paystackConfigured() && testMode() && <p className="c-small">Test mode: Paystack isn&rsquo;t connected yet, so no real money moves. The bank check and transfer are pretend.</p>}
+
+      {step === "phone" && (
+        <div className="c-card" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <p className="c-sub" style={{ margin: 0 }}>You signed up with your email. Before money leaves Doova, we check a phone number too: one person, one account. We&rsquo;ll text you a code.</p>
+          <ConfirmContact kind="phone" buttonLabel="Text me a code" />
+        </div>
+      )}
 
       {step === "nin" && (
         ninCheckAvailable() ? (

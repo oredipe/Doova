@@ -7,15 +7,21 @@ import { setNewTaskAlerts } from "@/app/notificationActions";
 import { PushToggle } from "@/components/PushToggle";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { vapidKeys } from "@/lib/push";
+import { getAuthUser } from "@/lib/supabase/server";
+import { smsCodesOn } from "@/lib/authChannels";
+import { ConfirmContact } from "@/components/ConfirmContact";
 
 /** Settings, shared by Earn and Create. Creators also see their tier. */
 export async function SettingsView({ mode }: { mode: "earn" | "create" }) {
   const me = await requireProfile();
-  const local = me.phone.replace(/^\+234/, "0");
-  const [keys, { data: prefs }] = await Promise.all([
+  const local = me.phone ? me.phone.replace(/^\+234/, "0") : null;
+  const [keys, { data: prefs }, auth, smsOn] = await Promise.all([
     vapidKeys().catch(() => null),
     createAdminClient().from("users").select("notify_new_tasks").eq("id", me.id).maybeSingle(),
+    getAuthUser(),
+    smsCodesOn(),
   ]);
+  const signInEmail = auth?.email ?? null;   // checked by Supabase; me.email may only be for receipts
   const alerts = prefs?.notify_new_tasks !== false;
   return (
     <>
@@ -25,7 +31,7 @@ export async function SettingsView({ mode }: { mode: "earn" | "create" }) {
           <span className="c-ico"><Icon name="user" size={18} /></span>
           <span className="c-row-main">
             <span className="c-row-title">{me.full_name}</span>
-            <span className="c-small">{local}</span>
+            <span className="c-small" style={{ overflowWrap: "anywhere" }}>{local ?? signInEmail ?? me.email}</span>
           </span>
           <span className={me.kyc_tier >= 1 ? "c-pill c-pill-paid" : "c-pill c-pill-quiet"}>
             {me.kyc_tier >= 1 ? "NIN verified" : "NIN not checked yet"}
@@ -59,6 +65,30 @@ export async function SettingsView({ mode }: { mode: "earn" | "create" }) {
           <Icon name="chev" size={16} />
         </Link>
       </div>
+      <h2 className="c-sec" id="sign-in">Sign-in details</h2>
+      <section className="c-card" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "space-between", flexWrap: "wrap" }}>
+            <span style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <strong style={{ fontSize: 15 }}>Phone number</strong>
+              <span className="c-small">{local ?? (smsOn ? "Not added yet. You need one before your first withdrawal." : "Not added yet. You can add one once text codes are switched on.")}</span>
+            </span>
+            {local && <span className="c-pill c-pill-paid">Checked</span>}
+          </span>
+          {!local && smsOn && <details><summary className="c-link" style={{ cursor: "pointer" }}>Add my phone number</summary><div style={{ paddingTop: 12 }}><ConfirmContact kind="phone" /></div></details>}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, borderTop: "1px solid var(--c-line)", paddingTop: 16 }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "space-between", flexWrap: "wrap" }}>
+            <span style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+              <strong style={{ fontSize: 15 }}>Email</strong>
+              <span className="c-small" style={{ overflowWrap: "anywhere" }}>{signInEmail ?? "Add one to sign in and reset your password by email, without a text."}</span>
+            </span>
+            {signInEmail && <span className="c-pill c-pill-paid">Checked</span>}
+          </span>
+          {!signInEmail && <details><summary className="c-link" style={{ cursor: "pointer" }}>Add my email</summary><div style={{ paddingTop: 12 }}><ConfirmContact kind="email" suggested={me.email ?? undefined} /></div></details>}
+        </div>
+        <span className="c-small">You can sign in with either, using the same password.</span>
+      </section>
       <h2 className="c-sec">Notifications</h2>
       <section className="c-card" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {keys && <PushToggle publicKey={keys.publicKey} />}

@@ -66,7 +66,7 @@ export async function dispatchPending(limit = 300): Promise<{ notes: number; sen
   ]);
   const wants = new Set((prefs ?? []).filter((p) => p.notify_push).map((p) => p.id as string));
   const { publicKey, privateKey } = await vapidKeys();
-  const origin = String(site?.value ?? "https://getdoova.com");
+  const origin = String(site?.value ?? "https://www.getdoova.com");
   let sent = 0; const dead: string[] = []; const ok: string[] = [];
   for (const x of todo) {
     if (!wants.has(x.user_id)) continue;

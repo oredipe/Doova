@@ -35,7 +35,7 @@ for testing the doer flow. The sample money is pretend; start a fresh database b
    | `SUPABASE_SECRET_KEY` | Secret key (`sb_secret_…`). Keep it secret. |
 
 3. Deploy. Every push to `main` deploys again.
-4. In Supabase **Authentication → URL Configuration**, set **Site URL** to `https://getdoova.com` (your `*.vercel.app` address until the domain is connected).
+4. In Supabase **Authentication → URL Configuration**, set **Site URL** to `https://www.getdoova.com` (your `*.vercel.app` address until the domain is connected).
 
 ### Test mode (pilot only)
 Add `DOOVA_TEST_MODE` = `on` in Vercel's environment variables to try the creator side before Paystack

@@ -40,7 +40,7 @@ export function AddStaffForm() {
           <span>Temporary password: <strong style={{ fontFamily: "ui-monospace, monospace" }}>{d.password}</strong></span>
         </div>
         <span className="c-small">On first sign-in they set up an authenticator app and choose their own password.</span>
-        <button type="button" className="c-btn c-btn-quiet" onClick={() => { navigator.clipboard?.writeText(`Doova admin\nSign in: https://getdoova.com/admin/sign-in\nEmail: ${d.email}\nTemporary password: ${d.password}`); setCopied(true); }}>
+        <button type="button" className="c-btn c-btn-quiet" onClick={() => { navigator.clipboard?.writeText(`Doova admin\nSign in: https://www.getdoova.com/admin/sign-in\nEmail: ${d.email}\nTemporary password: ${d.password}`); setCopied(true); }}>
           {copied ? "Copied" : "Copy these details"}
         </button>
         <a href="/admin/settings" className="c-link" style={{ alignSelf: "center" }}>Done</a>

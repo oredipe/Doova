@@ -1,10 +1,9 @@
 // The company behind Doova, shown in the website footer. Partners (Termii, Paystack, banks) look for the
 // registered name and RC number on the site (and sometimes a physical address).
-// The details stay hidden until CAC approves the registration: set `rc` to the RC number from the
-// Certificate of Incorporation (or COMPANY_RC_NUMBER in Vercel to preview) and they appear on every page.
+// Registered with CAC on 11 Nov 2026 (RC 10002402). COMPANY_RC_NUMBER in Vercel overrides `rc`.
 export const COMPANY = {
   legalName: "Doova Labs Limited",
-  rc: process.env.COMPANY_RC_NUMBER ?? "", // e.g. "9123456" once CAC approves (application submitted 10 Nov 2026)
+  rc: process.env.COMPANY_RC_NUMBER ?? "10002402", // CAC Certificate of Incorporation, 11 Nov 2026
   address: "", // not shown on the website (decided 10 Nov 2026); put the registered address here to show it
   email: "hello@getdoova.com",
   year: 2026, // the copyright year shown in the footer

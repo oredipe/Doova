@@ -236,3 +236,21 @@ fieldset[aria-invalid="true"] .c-choice, fieldset[aria-invalid="true"] .c-rate s
 }
 @media (max-width: 699px) { .ops-top .ops-search { display: none; } }
 @media (min-width: 1000px) { .ops-back { padding: 20px 32px 0 !important; } }
+
+/* ---------- 11 Nov: button hover and press ---------- */
+.c-btn, .c-ic-btn, .c-chip { transition: translate 0.2s cubic-bezier(0.2, 0.7, 0.2, 1), scale 0.15s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.15s; }
+@media (hover: hover) {
+  .c-btn:not(:disabled):hover { box-shadow: 0 12px 24px -14px rgba(17, 17, 17, 0.5); }
+  .c-btn-primary:not(:disabled):hover { background: #2B2B28; }
+  .c-btn-money:not(:disabled):hover { background: #D3F86A; }
+  .c-btn-light:not(:disabled):hover { background: #F1F0EB; }
+  .c-btn-quiet:not(:disabled):hover { background: rgba(17, 17, 17, 0.04); border-color: rgba(17, 17, 17, 0.5); box-shadow: none; }
+  .c-ic-btn:not(:disabled):hover { background: #F0EFEA; border-color: rgba(17, 17, 17, 0.2); }
+  .c-chip:not([aria-pressed="true"]):hover { border-color: rgba(17, 17, 17, 0.45); }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .c-btn:not(:disabled):hover { translate: 0 -2px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .c-btn:not(:disabled):active, .c-ic-btn:not(:disabled):active { translate: 0 0; scale: 0.97; }
+}

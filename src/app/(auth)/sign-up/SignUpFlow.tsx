@@ -23,10 +23,10 @@ const ROLES: { mode: Mode; title: string; text: string }[] = [
  * Doers always sign up with a phone number (one SIM, one doer: it keeps fake accounts off tasks).
  * Creators sign up by email, or by phone if they prefer once text codes are on.
  */
-export function SignUpFlow({ startAt, smsOn }: { startAt: "start" | "profile"; smsOn: boolean }) {
+export function SignUpFlow({ startAt, smsOn, startMode = "earn" }: { startAt: "start" | "profile"; smsOn: boolean; startMode?: Mode }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>(startAt);
-  const [mode, setMode] = useState<Mode>("earn");
+  const [mode, setMode] = useState<Mode>(startMode);   // ?as=create from "Post a task" buttons
   const [chosenVia, setChosenVia] = useState<Via | null>(null);
   const via: Via = mode === "earn" ? "phone" : smsOn ? chosenVia ?? "email" : "email";
   const [phoneText, setPhoneText] = useState("");

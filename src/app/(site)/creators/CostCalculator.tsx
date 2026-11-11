@@ -50,7 +50,7 @@ export function CostCalculator() {
           <span style={{ fontSize: 34, fontWeight: 700, letterSpacing: "-0.03em" }}>{naira(sub + fee)}</span>
         </div>
       </div>
-      <Link href="/sign-up" className="btn btn-dark">Post this task</Link>
+      <Link href="/sign-up?as=create" className="btn btn-dark">Post this task</Link>
     </div>
   );
 }

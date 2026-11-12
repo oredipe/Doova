@@ -7,6 +7,7 @@ import { maskPhone, normaliseNigerianPhone } from "@/lib/phone";
 import { isEmail, maskEmail } from "@/lib/contact";
 import { friendlyAuthError } from "@/lib/auth-errors";
 import { CodeInput } from "@/components/CodeInput";
+import { PasswordInput } from "@/components/PasswordInput";
 import { completeProfile, type ProfileFormState } from "../actions";
 
 type Step = "start" | "code" | "profile";
@@ -183,7 +184,7 @@ We&rsquo;ll email you a 6-digit code. To do tasks yourself later, you&rsquo;ll a
       </div>
       <div className="c-field">
         <label className="c-label" htmlFor="su-pass">Create a password</label>
-        <input id="su-pass" name="password" type="password" className="c-input" autoComplete="new-password"
+        <PasswordInput id="su-pass" name="password" autoComplete="new-password"
           placeholder="At least 8 characters" aria-invalid={!!fieldError("password") || undefined} />
       </div>
       {profileState.error && <p className="c-error" role="alert">{profileState.error}</p>}

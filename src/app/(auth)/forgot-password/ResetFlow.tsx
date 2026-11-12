@@ -7,6 +7,7 @@ import { maskPhone } from "@/lib/phone";
 import { maskEmail, readContact, type Contact } from "@/lib/contact";
 import { friendlyAuthError, smsFailed } from "@/lib/auth-errors";
 import { CodeInput } from "@/components/CodeInput";
+import { PasswordInput } from "@/components/PasswordInput";
 
 // Forgot password: prove it's your phone (text code) or your email (email code), then choose a new password.
 // The code signs you in; the new password replaces the old one.
@@ -175,12 +176,12 @@ No problem. Enter the phone number or email on your Doova account and we&rsquo;l
       </div>
       <div className="c-field">
         <label className="c-label" htmlFor="fp-pass">New password</label>
-        <input id="fp-pass" type="password" className="c-input" autoComplete="new-password" placeholder="At least 8 characters"
+        <PasswordInput id="fp-pass" autoComplete="new-password" placeholder="At least 8 characters"
           value={pass} onChange={(e) => setPass(e.target.value)} />
       </div>
       <div className="c-field">
         <label className="c-label" htmlFor="fp-again">Type it again</label>
-        <input id="fp-again" type="password" className="c-input" autoComplete="new-password"
+        <PasswordInput id="fp-again" autoComplete="new-password"
           value={again} onChange={(e) => setAgain(e.target.value)} />
       </div>
       {error && <p className="c-error" role="alert">{error}</p>}

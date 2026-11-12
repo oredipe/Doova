@@ -7,6 +7,7 @@ import { maskPhone } from "@/lib/phone";
 import { maskEmail, readContact, type Contact } from "@/lib/contact";
 import { friendlyAuthError, smsFailed, TEXTS_PAUSED } from "@/lib/auth-errors";
 import { CodeInput } from "@/components/CodeInput";
+import { PasswordInput } from "@/components/PasswordInput";
 import { Icon } from "@/components/Icon";
 
 type Mode = "password" | "code-ask" | "code-enter";
@@ -103,7 +104,7 @@ export function SignInForm({ next, smsOn }: { next: string; smsOn: boolean }) {
           {idField}
           <div className="c-field">
             <label className="c-label" htmlFor="si-pass">Password</label>
-            <input id="si-pass" type="password" className="c-input" autoComplete="current-password"
+            <PasswordInput id="si-pass" autoComplete="current-password"
               value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
           {error && <p className="c-error" role="alert">{error}</p>}

@@ -3,6 +3,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/supabase/server";
+import type { Details } from "@/lib/details";
 
 export type Profile = {
   id: string;
@@ -45,3 +46,18 @@ export function initialsOf(name: string | null): string {
 export function naira(kobo: number): string {
   return "₦" + Math.round(kobo / 100).toLocaleString("en-NG");
 }
+
+/**
+ * Profile details (date of birth, where you live, gender, what you do). `ready` is false until the
+ * 12 Nov database update has been run, so pages keep working before it.
+ */
+export const loadDetails = cache(async (me: Profile): Promise<Details & { ready: boolean }> => {
+  const { data, error } = await createAdminClient().from("users")
+    .select("date_of_birth, home_state, home_area, gender, occupation").eq("id", me.id).maybeSingle();
+  const d = (error ? null : data) as Partial<Details> | null;
+  return {
+    ready: !error, phone: me.phone, email: me.email,
+    date_of_birth: d?.date_of_birth ?? null, home_state: d?.home_state ?? null, home_area: d?.home_area ?? null,
+    gender: d?.gender ?? null, occupation: d?.occupation ?? null,
+  };
+});

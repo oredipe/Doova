@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useActionState, useEffect, useState } from "react";
+import { startTransition, useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { maskPhone, normaliseNigerianPhone } from "@/lib/phone";
@@ -9,6 +9,7 @@ import { friendlyAuthError } from "@/lib/auth-errors";
 import { CodeInput } from "@/components/CodeInput";
 import { PasswordInput } from "@/components/PasswordInput";
 import { completeProfile, type ProfileFormState } from "../actions";
+import { MONTHS } from "@/lib/details";
 
 type Step = "start" | "code" | "profile";
 type Mode = "earn" | "create";
@@ -38,6 +39,10 @@ export function SignUpFlow({ startAt, smsOn, startMode = "earn" }: { startAt: "s
   const [busy, setBusy] = useState(false);
   const [resendIn, setResendIn] = useState(0);
   const [profileState, profileAction, saving] = useActionState<ProfileFormState, FormData>(completeProfile, {});
+  const [agreed, setAgreed] = useState(false);
+  // Controlled, so a "too young" or password error doesn't clear what was already chosen.
+  const [fullName, setFullName] = useState("");
+  const [dob, setDob] = useState({ d: "", m: "", y: "" });
 
   useEffect(() => {
     if (resendIn <= 0) return;
@@ -134,8 +139,7 @@ We&rsquo;ll email you a 6-digit code. To do tasks yourself later, you&rsquo;ll a
         {error && <p id="su-err" className="c-error" role="alert">{error}</p>}
         <button className="c-btn c-btn-primary c-btn-block" disabled={busy}>{busy ? "Sending…" : "Send me a code"}</button>
         <p className="c-small" style={{ margin: 0 }}>
-          You can do both later: one account, switch any time in Settings. By continuing you agree to our{" "}
-          <Link href="/legal/terms">terms</Link> and <Link href="/legal/privacy">privacy policy</Link>.
+          You can do both later: one account, switch any time in Settings.
         </p>
         <p className="c-small" style={{ margin: 0, color: "var(--c-ink)" }}>
           Already have an account? <Link href="/sign-in" style={{ fontWeight: 650 }}>Sign in</Link>
@@ -168,27 +172,51 @@ We&rsquo;ll email you a 6-digit code. To do tasks yourself later, you&rsquo;ll a
     );
   }
 
-  const fieldError = (f: "name" | "password") => profileState.field === f ? profileState.error : undefined;
+  const fieldError = (f: NonNullable<ProfileFormState["field"]>) => profileState.field === f ? profileState.error : undefined;
+  const thisYear = new Date().getFullYear();
   return (
-    <form action={profileAction} style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+    // Submitted by hand (not form action=) so React doesn't reset the fields when the server says "not yet".
+    <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); startTransition(() => profileAction(fd)); }}
+      style={{ display: "flex", flexDirection: "column", gap: 22 }}>
       <input type="hidden" name="mode" value={mode} />
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <h1 className="c-title">Almost done</h1>
-        <p className="c-sub">Your {sentTo?.via === "email" ? "email" : sentTo ? "phone number" : "sign-up"} is checked. Tell us your name and choose a password.</p>
+        <p className="c-sub">Your {sentTo?.via === "email" ? "email" : sentTo ? "phone number" : "sign-up"} is checked. Tell us your name{mode === "earn" ? ", your date of birth" : ""} and choose a password.</p>
       </div>
       <div className="c-field">
         <label className="c-label" htmlFor="su-name">Your name</label>
-        <input id="su-name" name="name" className="c-input" autoComplete="name" placeholder="As it is on your NIN"
+        <input id="su-name" name="name" className="c-input" value={fullName} onChange={(e) => setFullName(e.target.value)} autoComplete="name" placeholder="As it is on your NIN"
           aria-invalid={!!fieldError("name") || undefined} />
         <span className="c-small">Use the name on your NIN. Your bank account name must match it when you withdraw.</span>
       </div>
+      {mode === "earn" && (
+        <fieldset className="c-field" style={{ border: 0, margin: 0, padding: 0 }} aria-describedby="su-dob-hint">
+          <legend className="c-label" style={{ padding: 0, marginBottom: 8 }}>Date of birth</legend>
+          <div className="pf-dob">
+            <select name="dob_d" value={dob.d} onChange={(e) => setDob({ ...dob, d: e.target.value })} className="c-input" aria-label="Day" aria-invalid={!!fieldError("dob") || undefined}>
+              <option value="" disabled>Day</option>{Array.from({ length: 31 }, (_, i) => <option key={i} value={i + 1}>{i + 1}</option>)}
+            </select>
+            <select name="dob_m" value={dob.m} onChange={(e) => setDob({ ...dob, m: e.target.value })} className="c-input" aria-label="Month" aria-invalid={!!fieldError("dob") || undefined}>
+              <option value="" disabled>Month</option>{MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+            </select>
+            <select name="dob_y" value={dob.y} onChange={(e) => setDob({ ...dob, y: e.target.value })} className="c-input" aria-label="Year" aria-invalid={!!fieldError("dob") || undefined}>
+              <option value="" disabled>Year</option>{Array.from({ length: 90 }, (_, i) => thisYear - 16 - i).map((y) => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+          <span id="su-dob-hint" className="c-small">You must be 18 or older. We check it against your NIN before your first withdrawal.</span>
+        </fieldset>
+      )}
       <div className="c-field">
         <label className="c-label" htmlFor="su-pass">Create a password</label>
         <PasswordInput id="su-pass" name="password" autoComplete="new-password"
           placeholder="At least 8 characters" aria-invalid={!!fieldError("password") || undefined} />
       </div>
+      <label className="pf-tick">
+        <input type="checkbox" name="agree" value="yes" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} aria-invalid={!!fieldError("agree") || undefined} />
+        <span>I confirm I am <b>18 or older</b>, and I agree to Doova&rsquo;s <Link href="/legal/terms" target="_blank">Terms</Link> and <Link href="/legal/privacy" target="_blank">Privacy policy</Link>.</span>
+      </label>
       {profileState.error && <p className="c-error" role="alert">{profileState.error}</p>}
-      <button className="c-btn c-btn-primary c-btn-block" disabled={saving}>
+      <button className="c-btn c-btn-primary c-btn-block" disabled={saving || !agreed}>
         {saving ? "Creating your account…" : mode === "earn" ? "Start earning" : "Start posting"}
       </button>
     </form>

@@ -72,3 +72,41 @@ export function shortName(full: string | null): string {
   const p = (full ?? "Doer").trim().split(/\s+/);
   return p.length > 1 ? `${p[0]} ${p[p.length - 1][0]}.` : p[0];
 }
+
+export type CreatorTask = {
+  id: string; title: string; kind: string; status: string; reward_kobo: number; slots: number; ends_at: string; created_at: string;
+  moderated_at: string | null; went_live_at: string | null;
+  approved: number; waiting: number;
+};
+
+/** Every task this person posted, newest first, with approved and waiting-for-review counts. */
+export async function loadCreatorTasks(meId: string): Promise<CreatorTask[]> {
+  const db = createAdminClient();
+  const { data } = await db.from("tasks").select("id, title, kind, status, reward_kobo, slots, ends_at, created_at, moderated_at, went_live_at")
+    .eq("creator_type", "user").eq("creator_id", meId).order("created_at", { ascending: false }).limit(500);
+  const tasks = (data ?? []) as Omit<CreatorTask, "approved" | "waiting">[];
+  const ids = tasks.map((t) => t.id);
+  const { data: subs } = ids.length
+    ? await db.from("submissions").select("task_id, status").in("task_id", ids).in("status", ["approved", "submitted"]).limit(50000)
+    : { data: [] };
+  const n = new Map<string, { approved: number; waiting: number }>();
+  for (const s of (subs ?? []) as { task_id: string; status: string }[]) {
+    const c = n.get(s.task_id) ?? { approved: 0, waiting: 0 };
+    if (s.status === "approved") c.approved++; else c.waiting++;
+    n.set(s.task_id, c);
+  }
+  return tasks.map((t) => ({ ...t, approved: n.get(t.id)?.approved ?? 0, waiting: n.get(t.id)?.waiting ?? 0 }));
+}
+
+/** Status pill for a creator's task (a task Doova turned down reads "Not approved"). */
+export function taskStatusOf(t: { status: string; moderated_at: string | null; went_live_at: string | null }) {
+  return t.status === "settled" && t.moderated_at && !t.went_live_at ? TASK_STATUS.rejected_by_moderation : TASK_STATUS[t.status] ?? TASK_STATUS.draft;
+}
+
+/** Which filter tab a task falls under on the Tasks page. */
+export function taskGroup(status: string): "live" | "checking" | "drafts" | "closed" {
+  if (["live", "paused", "filled"].includes(status)) return "live";
+  if (status === "under_moderation") return "checking";
+  if (["draft", "pending_funding"].includes(status)) return "drafts";
+  return "closed";
+}

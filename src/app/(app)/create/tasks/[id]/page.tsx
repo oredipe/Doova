@@ -6,17 +6,34 @@ import { naira, requireProfile } from "@/lib/profile";
 import { nowMs } from "@/lib/time";
 import { feeKobo, FLAG, loadOwnTask, shortName, TASK_STATUS } from "@/lib/creator";
 import type { Answers } from "@/lib/tasks";
-import { TaskResults } from "@/components/TaskResults";
+import { Insights, type InsightParams, type InsightRow } from "@/components/creator/Insights";
+import { ageBand, lagosToday } from "@/lib/details";
 import { closeTask } from "./actions";
 
 export const metadata: Metadata = { title: "Your task" };
 
-type Sub = { id: string; status: string; submitted_at: string | null; reviewed_at: string | null; auto_approved: boolean;
+type Sub = { id: string; doer_id: string; status: string; submitted_at: string | null; reviewed_at: string | null; auto_approved: boolean;
   answers: Answers | null; checks: { failed?: string[]; seconds?: number } | null; users: { full_name: string | null; level: number } | null };
 
+/** Approved responses with only what Insights may group by: age group, state and level (never names). */
+async function insightRows(approved: Sub[]): Promise<InsightRow[]> {
+  const ids = [...new Set(approved.map((s) => s.doer_id))];
+  const people = new Map<string, { date_of_birth?: string | null; home_state?: string | null }>();
+  if (ids.length) {
+    const { data, error } = await createAdminClient().from("users").select("id, date_of_birth, home_state").in("id", ids);
+    if (!error) for (const u of data ?? []) people.set(u.id as string, u);   // before the 12 Nov update: no age or state yet
+  }
+  const today = lagosToday();
+  return approved.map((s) => ({
+    answers: s.answers, at: s.submitted_at ?? s.reviewed_at ?? new Date(0).toISOString(), level: s.users?.level ?? 1,
+    age: ageBand(people.get(s.doer_id)?.date_of_birth ?? null, today), state: people.get(s.doer_id)?.home_state ?? null,
+    seconds: s.checks?.seconds ?? null,
+  }));
+}
 
 export default async function CreatorTaskPage({ params, searchParams }: {
-  params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; error?: string; funded?: string; closed?: string; reviewed?: string }>;
+  params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; error?: string; funded?: string; closed?: string; reviewed?: string;
+    view?: string; age?: string; state?: string; level?: string; by?: string; q?: string; find?: string; n?: string }>;
 }) {
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   const me = await requireProfile();
@@ -24,7 +41,7 @@ export default async function CreatorTaskPage({ params, searchParams }: {
   const t = await loadOwnTask(id, me);
   const db = createAdminClient();
   const [{ data: subsData }, { data: escrow }] = await Promise.all([
-    db.from("submissions").select("id, status, submitted_at, reviewed_at, auto_approved, answers, checks, users!submissions_doer_id_fkey(full_name, level)")
+    db.from("submissions").select("id, doer_id, status, submitted_at, reviewed_at, auto_approved, answers, checks, users!submissions_doer_id_fkey(full_name, level)")
       .eq("task_id", id).order("submitted_at", { ascending: true }).limit(5000),
     db.from("ledger_accounts").select("balance_kobo").eq("type", "task_escrow").eq("owner_id", id).maybeSingle(),
   ]);
@@ -34,15 +51,15 @@ export default async function CreatorTaskPage({ params, searchParams }: {
   const inProgress = subs.filter((x) => x.status === "reserved");
   const turnedDown = t.status === "settled" && !!t.moderated_at && !t.went_live_at;
   const st = turnedDown ? TASK_STATUS.rejected_by_moderation : TASK_STATUS[t.status] ?? TASK_STATUS.draft;
-  const tab = sp.tab === "results" ? "results" : sp.tab === "details" ? "details" : "review";
+  const tab = sp.tab === "results" || sp.tab === "insights" ? "insights" : sp.tab === "details" ? "details" : "review";
   const pct = Math.round((approved.length / t.slots) * 100);
   const due = (s: Sub) => new Date(new Date(s.submitted_at!).getTime() + t.auto_approve_hours * 3600_000);
   const hoursLeft = (s: Sub) => Math.max(0, Math.round((due(s).getTime() - now) / 3600_000));
 
   return (
     <>
-      <Link href="/create" className="c-small" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--c-ink)", fontWeight: 600, textDecoration: "none" }}>
-        <Icon name="back" size={16} stroke={2} /> Overview
+      <Link href="/create/tasks" className="c-small" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--c-ink)", fontWeight: 600, textDecoration: "none" }}>
+        <Icon name="back" size={16} stroke={2} /> Tasks
       </Link>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <span className={st.pill} style={{ alignSelf: "flex-start" }}>{st.label}</span>
@@ -83,7 +100,7 @@ export default async function CreatorTaskPage({ params, searchParams }: {
 
       <nav className="c-tabs" aria-label="Task sections">
         <Link className="c-tab" href={`/create/tasks/${id}?tab=review`} aria-current={tab === "review" ? "page" : undefined}>Responses</Link>
-        <Link className="c-tab" href={`/create/tasks/${id}?tab=results`} aria-current={tab === "results" ? "page" : undefined}>Results</Link>
+        <Link className="c-tab" href={`/create/tasks/${id}?tab=insights`} aria-current={tab === "insights" ? "page" : undefined}>Insights</Link>
         <Link className="c-tab" href={`/create/tasks/${id}?tab=details`} aria-current={tab === "details" ? "page" : undefined}>Details</Link>
       </nav>
 
@@ -124,7 +141,15 @@ export default async function CreatorTaskPage({ params, searchParams }: {
         </>
       )}
 
-      {tab === "results" && <TaskResults questions={t.form_schema?.questions ?? []} answers={approved.map((s) => s.answers)} exportHref={`/api/tasks/${id}/export`} />}
+      {tab === "insights" && (
+        <Insights taskId={id} questions={t.form_schema?.questions ?? []} rows={await insightRows(approved)} slots={t.slots} exportHref={`/api/tasks/${id}/export`}
+          p={{
+            view: sp.view === "written" || sp.view === "trends" ? sp.view : "answers",
+            age: sp.age || undefined, state: sp.state || undefined, level: /^[1-5]$/.test(sp.level ?? "") ? sp.level : undefined,
+            by: (["age", "area", "level"] as const).find((b) => b === sp.by) ?? "none",
+            q: sp.q || undefined, find: sp.find?.slice(0, 60) || undefined, n: Number(sp.n) > 0 ? Math.min(5000, Number(sp.n)) : undefined,
+          } satisfies InsightParams} />
+      )}
 
       {tab === "details" && (
         <section className="c-card" style={{ display: "flex", flexDirection: "column", gap: 10 }}>

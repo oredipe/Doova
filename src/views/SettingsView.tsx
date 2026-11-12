@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Icon } from "@/components/Icon";
-import { requireProfile } from "@/lib/profile";
+import { loadDetails, requireProfile } from "@/lib/profile";
+import { completion } from "@/lib/details";
 import { TIER_NAMES } from "@/lib/tasks";
 import { signOut } from "@/app/(auth)/actions";
 import { setNewTaskAlerts } from "@/app/notificationActions";
@@ -21,6 +22,7 @@ export async function SettingsView({ mode }: { mode: "earn" | "create" }) {
     getAuthUser(),
     smsCodesOn(),
   ]);
+  const details = await loadDetails(me);
   const signInEmail = auth?.email ?? null;   // checked by Supabase; me.email may only be for receipts
   const alerts = prefs?.notify_new_tasks !== false;
   return (
@@ -55,6 +57,16 @@ export async function SettingsView({ mode }: { mode: "earn" | "create" }) {
               <span className="c-small">Done once, at your first withdrawal. Covered by the ₦100 withdrawal fee.</span>
             </span>
           </div>
+        )}
+        {mode === "earn" && details.ready && (
+          <Link href="/profile" className="c-row" style={{ textDecoration: "none" }}>
+            <span className="c-ico"><Icon name="user" size={18} /></span>
+            <span className="c-row-main">
+              <span className="c-row-title">Your profile</span>
+              <span className="c-small">{completion(details)}% complete · age, where you live, what you do</span>
+            </span>
+            <Icon name="chev" size={16} />
+          </Link>
         )}
         <Link href={mode === "create" ? "/tasks" : "/create"} className="c-row" style={{ textDecoration: "none" }}>
           <span className="c-ico"><Icon name="users" size={18} /></span>

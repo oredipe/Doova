@@ -9,8 +9,17 @@ import { createAdminClient } from "@/lib/supabase/admin";
 // The shell is prerendered; who you are (from the session cookie) streams in.
 async function Nav() {
   const me = await requireProfile();
-  const { count } = await createAdminClient().from("notifications").select("id", { count: "exact", head: true }).eq("user_id", me.id).is("read_at", null);
-  return <AppNav initials={initialsOf(me.full_name)} unread={count ?? 0} />;
+  const db = createAdminClient();
+  const [{ count }, { data: mine }] = await Promise.all([
+    db.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", me.id).is("read_at", null),
+    db.from("tasks").select("id").eq("creator_type", "user").eq("creator_id", me.id).limit(1000),
+  ]);
+  const ids = (mine ?? []).map((t) => t.id as string);
+  const { count: toReview } = ids.length
+    ? await db.from("submissions").select("id", { count: "exact", head: true }).in("task_id", ids).eq("status", "submitted")
+    : { count: 0 };
+  return <AppNav initials={initialsOf(me.full_name)} name={me.full_name ?? "You"} creatorTier={me.creator_tier}
+    unread={count ?? 0} toReview={toReview ?? 0} taskCount={ids.length} />;
 }
 
 // Shown for a moment while the session loads (can't read the URL here: that would block prerendering).

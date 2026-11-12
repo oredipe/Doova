@@ -1,7 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireProfile } from "@/lib/profile";
+import { loadDetails, requireProfile } from "@/lib/profile";
 import { friendlyTaskError, loadTask, runChecks, validate, type Answers } from "@/lib/tasks";
 import { kickPush } from "@/lib/push";
 
@@ -10,6 +10,9 @@ export async function startTask(taskId: string) {
   kickPush();
   const me = await requireProfile();
   if (!me.phone) redirect(`/tasks/${taskId}?error=${encodeURIComponent("Add your phone number before doing tasks.")}`);
+  // Doova is 18+: a date of birth is needed before the first task (accounts from before 12 Nov add it once).
+  const details = await loadDetails(me);
+  if (details.ready && !details.date_of_birth && /^[0-9a-f-]{36}$/i.test(taskId)) redirect(`/profile?next=${encodeURIComponent(`/tasks/${taskId}`)}`);
   const db = createAdminClient();
   const { error } = await db.rpc("reserve_slot", { p_task: taskId, p_doer: me.id });
   if (error) redirect(`/tasks/${taskId}?error=${encodeURIComponent(friendlyTaskError(error.message))}`);

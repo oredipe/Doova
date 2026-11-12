@@ -10,7 +10,8 @@ export const metadata: Metadata = { title: "Creator overview" };
 
 type T = { id: string; title: string; status: string; reward_kobo: number; slots: number; ends_at: string; created_at: string; moderated_at: string | null; went_live_at: string | null };
 
-export default async function CreatorHome() {
+export default async function CreatorHome({ searchParams }: { searchParams: Promise<{ reset?: string }> }) {
+  const { reset } = await searchParams;
   const me = await requireProfile();
   const db = createAdminClient();
   const { data } = await db.from("tasks").select("id, title, status, reward_kobo, slots, ends_at, created_at, moderated_at, went_live_at")
@@ -30,6 +31,12 @@ export default async function CreatorHome() {
 
   return (
     <>
+      {reset && (
+        <div className="c-note" role="status">
+          <Icon name="check" size={18} />
+          <span>Your new password is saved. Use it next time you sign in.</span>
+        </div>
+      )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 16 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <span className="c-small">Creator home</span>

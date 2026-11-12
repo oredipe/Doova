@@ -86,7 +86,7 @@ export function ResetFlow({ smsOn }: { smsOn: boolean }) {
     if (pass.length < 8) { setError("Use at least 8 characters."); return; }
     if (pass !== again) { setError("The two passwords don’t match."); return; }
     setBusy(true);
-    const { error } = await createClient().auth.updateUser({ password: pass });
+    const { data: saved, error } = await createClient().auth.updateUser({ password: pass });
     setBusy(false);
     if (error) {
       const m = error.message;
@@ -98,7 +98,8 @@ export function ResetFlow({ smsOn }: { smsOn: boolean }) {
       else setError(`${friendlyAuthError(m)} (${m})`);
       return;
     }
-    router.replace("/tasks?reset=1");
+    // Creators go back to the creator side, doers to their tasks.
+    router.replace(saved.user?.user_metadata?.app_mode === "create" ? "/create?reset=1" : "/tasks?reset=1");
     router.refresh();
   }
 

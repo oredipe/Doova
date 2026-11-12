@@ -36,4 +36,4 @@ export function supabaseConfigured(): boolean {
 }
 
 /** Version of the privacy policy a person agrees to at sign-up (stored with their consent). */
-export const PRIVACY_POLICY_VERSION = "2026-11-draft";
+export const PRIVACY_POLICY_VERSION = "2026-11-12-draft";

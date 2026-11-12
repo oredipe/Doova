@@ -77,7 +77,7 @@ export function SignUpFlow({ startAt, smsOn, startMode = "earn" }: { startAt: "s
       : await createClient().auth.verifyOtp({ email: sentTo.value, token: code, type: "email" });
     setBusy(false);
     if (error) { setError(friendlyAuthError(error.message, sentTo.via)); return; }
-    if (data.user?.user_metadata?.profile_complete) { router.replace("/tasks"); return; }
+    if (data.user?.user_metadata?.profile_complete) { router.replace(data.user.user_metadata.app_mode === "create" ? "/create" : "/tasks"); return; }
     setStep("profile");
   }
 

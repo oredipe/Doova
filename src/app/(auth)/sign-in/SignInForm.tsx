@@ -22,8 +22,10 @@ export function SignInForm({ next, smsOn }: { next: string; smsOn: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  function go(profileComplete: boolean) {
-    router.replace(profileComplete ? next : "/sign-up?step=profile");
+  function go(profileComplete: boolean, appMode?: unknown) {
+    // With no particular page to return to, creators land on the creator side.
+    const home = next === "/tasks" && appMode === "create" ? "/create" : next;
+    router.replace(profileComplete ? home : "/sign-up?step=profile");
     router.refresh();
   }
 
@@ -45,7 +47,7 @@ export function SignInForm({ next, smsOn }: { next: string; smsOn: boolean }) {
       : await createClient().auth.signInWithPassword({ email: c.value, password });
     setBusy(false);
     if (error) { setError(friendlyAuthError(error.message, c.kind)); return; }
-    go(!!data.user?.user_metadata?.profile_complete);
+    go(!!data.user?.user_metadata?.profile_complete, data.user?.user_metadata?.app_mode);
   }
 
   async function askCode(e: React.FormEvent) {
@@ -74,7 +76,7 @@ export function SignInForm({ next, smsOn }: { next: string; smsOn: boolean }) {
       : await createClient().auth.verifyOtp({ email: sentTo.value, token: code, type: "email" });
     setBusy(false);
     if (error) { setError(friendlyAuthError(error.message, sentTo.kind)); return; }
-    go(!!data.user?.user_metadata?.profile_complete);
+    go(!!data.user?.user_metadata?.profile_complete, data.user?.user_metadata?.app_mode);
   }
 
   const idField = (

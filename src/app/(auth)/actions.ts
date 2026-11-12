@@ -49,7 +49,8 @@ export async function completeProfile(_prev: ProfileFormState, form: FormData): 
     .eq("id", auth.user.id);
   if (upError) return { error: "We couldn’t save your name. Please try again." };
 
-  redirect("/tasks?welcome=1");
+  // Creators start on the creator side; doers on the task feed.
+  redirect(mode === "create" ? "/create" : "/tasks?welcome=1");
 }
 
 export async function signOut() {

@@ -83,6 +83,12 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .c-input { width: 100%; min-height: 54px; padding: 0 16px; border-radius: 12px; border: 1px solid #8A8982; background: var(--c-surface); font-size: 16px; color: var(--c-ink); }
 .c-input:focus { outline: 2px solid var(--c-violet); outline-offset: 0; border-color: transparent; }
 .c-input[aria-invalid="true"] { border-color: var(--c-bad); }
+/* Dropdowns: our own chevron with room around it (the browser's arrow sits against the border). */
+select.c-input { -webkit-appearance: none; appearance: none; padding-right: 48px; text-overflow: ellipsis; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23111111' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 16px center; background-size: 18px 18px; }
+select.c-input:disabled { cursor: not-allowed; opacity: 0.6; }
+.pf-dob select.c-input { padding-left: 12px; padding-right: 36px; background-position: right 12px center; }
 .c-pass { position: relative; display: block; }
 .c-pass-eye { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: transparent; color: var(--c-muted, #5B5A55); cursor: pointer; }
 .c-pass-eye:hover { color: var(--c-ink); background: rgba(0,0,0,.05); }

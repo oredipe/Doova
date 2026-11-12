@@ -137,8 +137,8 @@ the withdrawal phone step; Supabase test phone numbers work either way).
    `resend`, password = the Resend API key.
 3. Supabase → **Authentication → Emails → Templates**: paste the files in `supabase/email-templates/`
    into **Confirm signup** (subject "Your Doova sign-up code"), **Magic Link** ("Your Doova sign-in
-   code") and **Change Email Address** ("Confirm your email for Doova"). They show the code
-   (`{{ .Token }}`), not a link.
+   code"), **Change Email Address** ("Confirm your email for Doova") and **Reset Password** ("Reset
+   your Doova password"; forgot password by email uses it). They show the code (`{{ .Token }}`), not a link.
 4. Supabase → **Authentication → Sign In / Providers → Email**: enabled, "Confirm email" on, Email OTP
    length **6**, Email OTP expiration **600** seconds.
 5. Supabase → **Authentication → Rate Limits**: raise "emails sent" from the default to about 100 an hour.

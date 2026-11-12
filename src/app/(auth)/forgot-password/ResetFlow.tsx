@@ -40,7 +40,7 @@ export function ResetFlow({ smsOn }: { smsOn: boolean }) {
     setBusy(true);
     const { error } = c.kind === "phone"
       ? await createClient().auth.signInWithOtp({ phone: c.value, options: { shouldCreateUser: false } })
-      : await createClient().auth.signInWithOtp({ email: c.value, options: { shouldCreateUser: false } });
+      : await createClient().auth.resetPasswordForEmail(c.value);   // the "Reset password" email, with a 6-digit code
     setBusy(false);
     if (error) {
       setError(c.kind === "phone" && !smsOn && smsFailed(error.message)
@@ -57,7 +57,7 @@ export function ResetFlow({ smsOn }: { smsOn: boolean }) {
     setError(null); setBusy(true);
     const { data, error } = sentTo.kind === "phone"
       ? await createClient().auth.verifyOtp({ phone: sentTo.value, token: code, type: "sms" })
-      : await createClient().auth.verifyOtp({ email: sentTo.value, token: code, type: "email" });
+      : await createClient().auth.verifyOtp({ email: sentTo.value, token: code, type: "recovery" });
     setBusy(false);
     if (error) { setError(friendlyAuthError(error.message, sentTo.kind)); return; }
     if (!data.user?.user_metadata?.profile_complete) { router.replace("/sign-up?step=profile"); return; }  // never finished sign-up
@@ -133,7 +133,7 @@ No problem. Enter the phone number or email on your Doova account and we&rsquo;l
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <h1 className="c-title">Enter the code</h1>
           <p className="c-sub">
-            {sentTo?.kind === "email" ? `We emailed 6 digits to ${maskEmail(sentTo.value)}.` : `We sent 6 digits by text to ${sentTo ? maskPhone(sentTo.value) : "your phone"}.`}
+            {sentTo?.kind === "email" ? `If ${maskEmail(sentTo.value)} is on a Doova account, we’ve emailed it a 6-digit reset code.` : `We sent 6 digits by text to ${sentTo ? maskPhone(sentTo.value) : "your phone"}.`}
           </p>
         </div>
         <CodeInput value={code} onChange={setCode} invalid={!!error} />

@@ -83,6 +83,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .c-input { width: 100%; min-height: 54px; padding: 0 16px; border-radius: 12px; border: 1px solid #8A8982; background: var(--c-surface); font-size: 16px; color: var(--c-ink); }
 .c-input:focus { outline: 2px solid var(--c-violet); outline-offset: 0; border-color: transparent; }
 .c-input[aria-invalid="true"] { border-color: var(--c-bad); }
+.c-pass { position: relative; display: block; }
+.c-pass-eye { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: transparent; color: var(--c-muted, #5B5A55); cursor: pointer; }
+.c-pass-eye:hover { color: var(--c-ink); background: rgba(0,0,0,.05); }
+.c-pass-eye:focus-visible { outline: 2px solid var(--c-violet); outline-offset: 0; }
 .c-prefix { display: flex; gap: 8px; }
 .c-prefix > span { flex: none; width: 84px; display: flex; align-items: center; justify-content: center; min-height: 54px; border-radius: 12px; background: #ECEBE7; font-size: 16px; }
 .c-otp { display: flex; gap: 8px; }

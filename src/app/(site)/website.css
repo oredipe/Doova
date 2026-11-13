@@ -358,3 +358,34 @@
   .ws .btn:hover { translate: 0 -2px; }
   .ws .btn:active { translate: 0 0; scale: 0.97; }
 }
+
+/* ---------- bento motion (13 Nov): one quiet loop per "Why Doova" tile; long rests between moves ---------- */
+.ws .bv-scale { display: block; overflow: visible; }
+.ws .bv-beam { transform-box: view-box; transform-origin: 80px 30px; }
+.ws .bv-ok { scale: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes bv-tilt { 0%, 100% { rotate: -7deg; } 50% { rotate: 7deg; } }
+  @keyframes bv-pan-l { 0%, 100% { translate: 0 4px; } 50% { translate: 0 -4px; } }
+  @keyframes bv-pan-r { 0%, 100% { translate: 0 -4px; } 50% { translate: 0 4px; } }
+  @keyframes bv-settle { 0% { rotate: -7deg; } 30% { rotate: 6deg; } 50% { rotate: -3deg; } 65% { rotate: 1.5deg; } 78%, 100% { rotate: 0deg; } }
+  @keyframes bv-ok { 0%, 8% { scale: 0; } 14% { scale: 1.25; } 18%, 82% { scale: 1; } 90%, 100% { scale: 0; } }
+  @keyframes bv-tick { 0%, 60% { scale: 1; } 66% { scale: 1.3; } 72%, 100% { scale: 1; } }
+  @keyframes bv-fill { 0%, 6% { width: 0; } 30%, 100% { width: 72%; } }
+  @keyframes bv-back { 0%, 30% { opacity: 0; } 40%, 100% { opacity: 1; } }
+  @keyframes bv-coin { 0%, 40% { translate: 0 -14px; opacity: 0; } 50% { translate: 0 2px; opacity: 1; } 56%, 100% { translate: 0 0; opacity: 1; } }
+  @keyframes bv-zero { 0%, 55% { background-color: transparent; } 62%, 80% { background-color: #E9F8B8; } 92%, 100% { background-color: transparent; } }
+  /* fair rules: the scale swings, then settles level */
+  .ws .bv-beam { animation: bv-settle 6s cubic-bezier(0.4, 0, 0.3, 1) infinite; }
+  .ws .bv-pan-l, .ws .bv-pan-r { animation: none; }
+  /* real people: each person gets a check, one after another */
+  .ws .bv-ok { animation: bv-ok 7s ease-out infinite; }
+  .ws .bv-ok2 { animation-delay: 0.35s; } .ws .bv-ok3 { animation-delay: 0.7s; } .ws .bv-ok4 { animation-delay: 1.05s; }
+  .ws .bv-tick { animation: bv-tick 7s ease-out infinite; }
+  /* your money: the used part fills, the unused part lights up, the coin drops into the wallet */
+  .ws .bv-used { animation: bv-fill 7s cubic-bezier(0.3, 0.7, 0.2, 1) infinite; }
+  .ws .bv-back { animation: bv-back 7s ease-out infinite; }
+  .ws .bv-coin { animation: bv-coin 7s cubic-bezier(0.3, 0.7, 0.2, 1) infinite; }
+  /* one fee: the ₦0 line glows */
+  .ws .bv-zero { border-radius: 8px; margin: 0 -8px; padding: 2px 8px; animation: bv-zero 7s ease-in-out infinite; }
+}
+@media (prefers-reduced-motion: reduce) { .ws .bv-zero { margin: 0; } }

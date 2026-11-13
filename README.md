@@ -88,9 +88,20 @@ withdrawals are marked sent straight away. To connect Paystack:
 4. Going live: swap in the live secret key and live webhook URL. Optional `PAYSTACK_PREFERRED_BANK`
    (`titan-paystack` by default, or `wema-bank`).
 
-**NIN checks** need an identity provider (Paystack doesn't check NINs); until `NIN_PROVIDER` is set,
-test mode accepts any 11 digits and uses the person's profile name. Before going live, set
-`NIN_HASH_SECRET` in Vercel to a long random string and never change it (it keeps one NIN per account).
+**NIN checks** use Monnify (Paystack doesn't check NINs); until `NIN_PROVIDER` is set, test mode accepts
+any 11 digits and uses the person's profile name. To switch Monnify on:
+1. Open a Monnify account for Doova Labs Limited and get it approved (NIN lookups are live-only; the sandbox has none).
+2. Top up the Monnify wallet: each successful lookup costs ₦60 (₦6,000 covers 100 doers).
+3. Run `supabase/updates/2026-11-13-nin-checks.sql` in the Supabase SQL editor.
+4. In Vercel add `NIN_PROVIDER=monnify`, `MONNIFY_API_KEY` and `MONNIFY_SECRET_KEY` (Monnify → Developers →
+   API Keys & Webhooks, **live** keys), and `NIN_HASH_SECRET` as a long random string you never change (it keeps
+   one NIN per account). Redeploy.
+5. Try it with your own NIN first.
+
+The NIN's name must match the Doova name and its date of birth must match the one given at sign-up (accounts
+without one get it from the NIN). Nothing from the NIN record is shown back to the person. Each person gets 3
+tries a day; every attempt is logged in `nin_checks` (never the NIN), and an NIN showing someone under 18 flags
+the account. If the Monnify wallet runs dry, people see "try again in a few hours" and it doesn't use up their tries.
 
 ### Notifications
 The database writes notifications when things happen (paid, not approved, appeal kept, responses to

@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireProfile } from "@/lib/profile";
-import { checkNin, ninHash } from "@/lib/identity";
+import { checkNin, logNinCheck, ninHash } from "@/lib/identity";
+import { loadDetails } from "@/lib/profile";
 import { createRecipient, friendlyPaystackError, listBanks, resolveAccount } from "@/lib/paystack";
 import { sendPayout } from "@/lib/payouts";
 import { kickPush } from "@/lib/push";
@@ -16,10 +17,19 @@ export async function verifyNin(base: string, form: FormData) {
   const me = await requireProfile();
   const nin = String(form.get("nin") ?? "").replace(/\D/g, "");
   if (form.get("consent") !== "on") back(base, { error: "Tick the box to let Doova check your NIN." });
-  const r = await checkNin(nin, me.full_name ?? "");
-  if (!r.ok) back(base, { error: r.error });
-  const { error } = await createAdminClient().rpc("record_nin_check", { p_user: me.id, p_nin_hash: ninHash(nin), p_legal_name: (r as { legalName: string }).legalName });
-  if (error) back(base, { error: error.message.includes("already linked") ? "This NIN is already linked to another Doova account. Each person can have one account." : "Something went wrong. Please try again." });
+  const details = await loadDetails(me);
+  const r = await checkNin(nin, { id: me.id, name: me.full_name ?? "", dob: details.date_of_birth });
+  if (!r.ok) { back(base, { error: r.error }); return; }
+  // With a date of birth from the NIN, the 13 Nov database function also saves it (accounts from before 12 Nov have none).
+  const { error } = r.dob
+    ? await createAdminClient().rpc("record_nin_check", { p_user: me.id, p_nin_hash: ninHash(nin), p_legal_name: r.legalName, p_dob: r.dob })
+    : await createAdminClient().rpc("record_nin_check", { p_user: me.id, p_nin_hash: ninHash(nin), p_legal_name: r.legalName });
+  if (error) {
+    const dup = error.message.includes("already linked");
+    await logNinCheck(me.id, dup ? "duplicate" : "error", true, dup ? undefined : error.message);
+    back(base, { error: dup ? "This NIN is already linked to another Doova account. Each person can have one account." : "Something went wrong. Please try again." });
+  }
+  await logNinCheck(me.id, "passed", true);
   revalidatePath(base);
   back(base, { done: "nin" });
 }

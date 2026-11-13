@@ -8,12 +8,13 @@ import { maskEmail, readContact, type Contact } from "@/lib/contact";
 import { friendlyAuthError, smsFailed } from "@/lib/auth-errors";
 import { CodeInput } from "@/components/CodeInput";
 import { PasswordInput } from "@/components/PasswordInput";
+import { CodeBackups, type CodeBackupsOn } from "@/components/CodeBackups";
 
 // Forgot password: prove it's your phone (text code) or your email (email code), then choose a new password.
 // The code signs you in; the new password replaces the old one.
 type Step = "phone" | "code" | "authenticator" | "password";
 
-export function ResetFlow({ smsOn }: { smsOn: boolean }) {
+export function ResetFlow({ smsOn, backups = { whatsapp: false, voice: false } }: { smsOn: boolean; backups?: CodeBackupsOn }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("phone");
   const [idText, setIdText] = useState("");
@@ -146,6 +147,10 @@ No problem. Enter the phone number or email on your Doova account and we&rsquo;l
             : <button type="button" className="c-link" onClick={() => sendCode()}>Send a new code</button>}
           <button type="button" className="c-link" onClick={() => { setStep("phone"); setError(null); }}>{sentTo?.kind === "email" ? "Change email" : "Change number"}</button>
         </div>
+        {sentTo?.kind === "phone" && resendIn === 0 && (
+          <CodeBackups phone={sentTo.value} on={backups} onSent={() => setResendIn(60)}
+            resend={() => createClient().auth.signInWithOtp({ phone: sentTo.value, options: { shouldCreateUser: false } })} />
+        )}
       </form>
     );
   }

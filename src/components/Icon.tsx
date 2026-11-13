@@ -35,6 +35,7 @@ const PATHS: Record<string, React.ReactNode> = {
   cake: (<><path d="M4 20h16M5 20v-7h14v7M5 16.5c1.2 1 2.3 1 3.5 0s2.3-1 3.5 0 2.3 1 3.5 0 2.3-1 3.5 0M12 13V9.5" /><path d="M12 7.5c-.9-.8-.9-2 0-3.5.9 1.5.9 2.7 0 3.5z" /></>),
   phone: (<><rect x="7" y="3" width="10" height="18" rx="2.5" /><path d="M11 17.5h2" /></>),
   mail: (<><rect x="3.5" y="5.5" width="17" height="13" rx="2" /><path d="M4 7l8 6 8-6" /></>),
+  chat: (<><path d="M5 19.5l1.3-3.9A7.5 7.5 0 1 1 9.4 18.6z" /></>),
   work: (<><rect x="3.5" y="7.5" width="17" height="12" rx="2" /><path d="M9 7.5V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v1.5M3.5 12.5h17" /></>),
 };
 

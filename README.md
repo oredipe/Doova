@@ -129,6 +129,22 @@ Codes are sent by `/api/auth/sms-hook`: Supabase hands it each code, it sends th
 Failures show in Vercel's logs as `sms: …` (numbers are shortened), and people see "We couldn't send a
 text right now"; a common cause is an empty Termii wallet.
 
+**Sender ID (13 Nov 2026):** Termii refused the custom "Doova" Sender ID (it wants an operational
+licence, for a software company a NITDA registration). Until then use Termii's managed ID: Termii
+dashboard → IDs → request the managed ID, and put the name they give you in `TERMII_SENDER_ID`.
+Airtel no longer delivers codes from shared IDs, so turn on the backups below and test an Airtel line.
+
+**Backups: WhatsApp and voice call.** Phone-code screens show "No text after a minute? Get the code on:
+WhatsApp / Call me" once each is switched on. Tapping one records the choice (`/api/auth/code-channel`,
+max 5 an hour per number), asks Supabase for a new code, and the hook sends it that way, falling back to a
+text if the route fails.
+1. Run `supabase/updates/2026-11-13-code-channels.sql`.
+2. WhatsApp: ask Termii support to enable WhatsApp OTP ("Send WhatsApp Token") on the account; they give
+   you a device name. Set `TERMII_WHATSAPP_FROM` to it.
+3. Voice: ask Termii to enable voice OTP calls, then set `TERMII_VOICE=on` (optional `TERMII_VOICE_PATH`,
+   default `/api/sms/otp/call`; Termii's docs also mention `/api/sms/otp/send/voice`).
+4. Redeploy and try each one on your own phone.
+
 ### 4. Email codes (Resend)
 Doers always sign up with a phone number (one SIM, one doer: it keeps fake accounts off task slots).
 Creators can sign up by email (or by phone once text codes are on). Anyone can add an email in

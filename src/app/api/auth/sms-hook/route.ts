@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 // Supabase "Send SMS" auth hook. Supabase calls this with each sign-up, sign-in and password-reset
 // code; we send it by Termii (a Nigerian SMS provider that can reach DND numbers). Requests are
@@ -9,6 +10,9 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 //   Termii support gives you), optional TERMII_CHANNEL ("dnd" default: reaches DND numbers, needed
 //   for codes in Nigeria; "generic" otherwise) and TERMII_BASE_URL (shown on the Termii dashboard).
 // Error messages mention "SMS" so the sign-in screens show "We couldn't send a text right now".
+// 13 Nov: if the person just tapped "Send it on WhatsApp" or "Call me with the code" (../code-channel),
+// the code goes that way instead: WhatsApp needs TERMII_WHATSAPP_FROM, calls need TERMII_VOICE=on
+// (optional TERMII_VOICE_PATH, default /api/sms/otp/call). If that route fails, we fall back to a text.
 
 export const maxDuration = 10;
 
@@ -57,24 +61,39 @@ export async function POST(request: Request) {
   if (!apiKey || !sender) return fail(500, "SMS provider is not configured");
 
   const base = (process.env.TERMII_BASE_URL ?? "https://v4.api.termii.com").replace(/\/+$/, "");
+  const post = async (path: string, payload: Record<string, unknown>) => {
+    const res = await fetch(`${base}${path}`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ api_key: apiKey, ...payload }),
+      signal: AbortSignal.timeout(3500), // Supabase waits about 5 seconds for the hook
+    });
+    const reply = (await res.json().catch(() => ({}))) as { message_id?: string; pinId?: string; message?: string; code?: string };
+    return { ok: res.ok && Boolean(reply.message_id ?? reply.pinId), status: res.status, reply };
+  };
+
+  // A WhatsApp or call the person asked for in the last 5 minutes (used once).
+  const route = await chosenRoute(phone);
+  if (route) {
+    try {
+      const r = route === "whatsapp"
+        ? await post("/api/sms/send", { to: phone, from: process.env.TERMII_WHATSAPP_FROM, sms: otp, type: "plain", channel: "whatsapp_otp" })
+        : await post(process.env.TERMII_VOICE_PATH ?? "/api/sms/otp/call", { phone_number: phone, code: otp });
+      if (r.ok) { console.log(`sms: sent by ${route}`, mask(phone)); return Response.json({}); }
+      console.error(`sms: ${route} refused, sending a text instead`, mask(phone), r.status, r.reply.message ?? r.reply.code ?? "");
+    } catch (e) {
+      console.error(`sms: ${route} failed, sending a text instead`, mask(phone), e instanceof Error ? e.message : e);
+    }
+  }
+
   let status = 0;
   let reply: { message_id?: string; message?: string; code?: string } = {};
   try {
-    const res = await fetch(`${base}/api/sms/send`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        api_key: apiKey,
-        to: phone,
-        from: sender,
-        channel: process.env.TERMII_CHANNEL ?? "dnd",
-        type: "plain",
-        sms: `Your Doova code is ${otp}. It expires in 10 minutes. Never share it; Doova will never ask for it.`,
-      }),
-      signal: AbortSignal.timeout(4000), // Supabase waits about 5 seconds for the hook
+    const r = await post("/api/sms/send", {
+      to: phone, from: sender, channel: process.env.TERMII_CHANNEL ?? "dnd", type: "plain",
+      sms: `Your Doova code is ${otp}. It expires in 10 minutes. Never share it; Doova will never ask for it.`,
     });
-    status = res.status;
-    reply = await res.json().catch(() => ({}));
+    status = r.status;
+    reply = r.reply;
   } catch (e) {
     console.error("sms: Termii unreachable", mask(phone), e instanceof Error ? e.message : e);
     return fail(502, "SMS could not be sent: the text provider didn't answer");
@@ -86,4 +105,19 @@ export async function POST(request: Request) {
   }
   console.log("sms: sent", mask(phone), reply.message_id);
   return Response.json({});
+}
+
+/** The route the person picked on the code screen, if any in the last 5 minutes; marks it used. */
+async function chosenRoute(phone: string): Promise<"whatsapp" | "voice" | null> {
+  try {
+    const db = createAdminClient();
+    const { data } = await db.from("code_channel_requests").select("id, channel")
+      .eq("phone", phone).is("used_at", null).gte("created_at", new Date(Date.now() - 300_000).toISOString())
+      .order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (!data) return null;
+    await db.from("code_channel_requests").update({ used_at: new Date().toISOString() }).eq("id", data.id);
+    return data.channel === "whatsapp" || data.channel === "voice" ? data.channel : null;
+  } catch {
+    return null;   // table missing (update not run) or database slow: just send a text
+  }
 }

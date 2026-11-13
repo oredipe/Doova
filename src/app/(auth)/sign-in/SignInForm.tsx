@@ -8,12 +8,13 @@ import { maskEmail, readContact, type Contact } from "@/lib/contact";
 import { friendlyAuthError, smsFailed, TEXTS_PAUSED } from "@/lib/auth-errors";
 import { CodeInput } from "@/components/CodeInput";
 import { PasswordInput } from "@/components/PasswordInput";
+import { CodeBackups, type CodeBackupsOn } from "@/components/CodeBackups";
 import { Icon } from "@/components/Icon";
 
 type Mode = "password" | "code-ask" | "code-enter";
 
 /** Sign in with a phone number or email: password, or a one-time code (by text or by email). */
-export function SignInForm({ next, smsOn }: { next: string; smsOn: boolean }) {
+export function SignInForm({ next, smsOn, backups = { whatsapp: false, voice: false } }: { next: string; smsOn: boolean; backups?: CodeBackupsOn }) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("password");
   const [idText, setIdText] = useState("");
@@ -137,6 +138,10 @@ export function SignInForm({ next, smsOn }: { next: string; smsOn: boolean }) {
           <button type="button" className="c-link" onClick={() => { setMode("code-ask"); setCode(""); setError(null); }}>
             {sentTo?.kind === "email" ? "Change email" : "Change number"}
           </button>
+          {sentTo?.kind === "phone" && (
+            <CodeBackups phone={sentTo.value} on={backups} onSent={() => setCode("")}
+              resend={() => createClient().auth.signInWithOtp({ phone: sentTo.value, options: { shouldCreateUser: false } })} />
+          )}
         </form>
       )}
 

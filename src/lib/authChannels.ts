@@ -14,3 +14,15 @@ export async function smsCodesOn(): Promise<boolean> {
   if (forced === "off") return false;
   return Boolean(process.env.TERMII_API_KEY && process.env.TERMII_SENDER_ID);
 }
+
+/**
+ * Backup routes for phone codes (13 Nov 2026), offered on the code screen when a text doesn't arrive:
+ * WhatsApp needs TERMII_WHATSAPP_FROM (the WhatsApp device name Termii support gives you once they enable
+ * WhatsApp OTP on the account); a voice call needs TERMII_VOICE=on (Termii reads the code out).
+ */
+export type CodeBackups = { whatsapp: boolean; voice: boolean };
+export async function codeBackups(): Promise<CodeBackups> {
+  await connection();
+  const key = Boolean(process.env.TERMII_API_KEY);
+  return { whatsapp: key && Boolean(process.env.TERMII_WHATSAPP_FROM), voice: key && process.env.TERMII_VOICE?.trim().toLowerCase() === "on" };
+}

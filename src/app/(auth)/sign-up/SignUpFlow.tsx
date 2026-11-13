@@ -8,6 +8,7 @@ import { isEmail, maskEmail } from "@/lib/contact";
 import { friendlyAuthError } from "@/lib/auth-errors";
 import { CodeInput } from "@/components/CodeInput";
 import { PasswordInput } from "@/components/PasswordInput";
+import { CodeBackups, type CodeBackupsOn } from "@/components/CodeBackups";
 import { completeProfile, type ProfileFormState } from "../actions";
 import { MONTHS } from "@/lib/details";
 
@@ -25,7 +26,7 @@ const ROLES: { mode: Mode; title: string; text: string }[] = [
  * Doers always sign up with a phone number (one SIM, one doer: it keeps fake accounts off tasks).
  * Creators sign up by email, or by phone if they prefer once text codes are on.
  */
-export function SignUpFlow({ startAt, smsOn, startMode = "earn" }: { startAt: "start" | "profile"; smsOn: boolean; startMode?: Mode }) {
+export function SignUpFlow({ startAt, smsOn, startMode = "earn", backups = { whatsapp: false, voice: false } }: { startAt: "start" | "profile"; smsOn: boolean; startMode?: Mode; backups?: CodeBackupsOn }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>(startAt);
   const [mode, setMode] = useState<Mode>(startMode);   // ?as=create from "Post a task" buttons
@@ -168,6 +169,10 @@ We&rsquo;ll email you a 6-digit code. To do tasks yourself later, you&rsquo;ll a
             : <button type="button" className="c-link" onClick={() => sendCode()}>Send a new code</button>}
           <button type="button" className="c-link" onClick={() => { setStep("start"); setError(null); }}>{byEmail ? "Change email" : "Change number"}</button>
         </div>
+        {!byEmail && sentTo && resendIn === 0 && (
+          <CodeBackups phone={sentTo.value} on={backups} onSent={() => setResendIn(60)}
+            resend={() => createClient().auth.signInWithOtp({ phone: sentTo.value, options: { shouldCreateUser: true, data: { app_mode: mode } } })} />
+        )}
       </form>
     );
   }
